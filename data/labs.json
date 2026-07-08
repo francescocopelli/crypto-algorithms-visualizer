@@ -1,0 +1,67 @@
+[
+  {
+    "id": "rsa-malleable",
+    "name": "RSA senza padding",
+    "category": "Protocol",
+    "title": "Malleability del plain RSA",
+    "scenario": "Alice cifra un'offerta riservata di 1000€ con RSA plain. L'attaccante intercetta il ciphertext e vuole raddoppiare il valore senza conoscere il messaggio.",
+    "steps": [
+      "Alice calcola c = m^e mod n  (m=1000, e=79, n=3337 → c=1570)",
+      "L'attaccante sceglie s=2 e calcola: s^e mod n = 2^79 mod 3337 = 3158",
+      "L'attaccante invia c' = 3158 · 1570 mod 3337 = 2759 al destinatario",
+      "Il destinatario decifra: m' = 2759^1019 mod 3337 = 2000",
+      "Risultato: l'attaccante ha raddoppiato il messaggio senza mai decifrarlo."
+    ],
+    "lesson": "Il plain RSA è omomorfico rispetto alla moltiplicazione. Senza padding che rompa questa struttura algebrica, qualsiasi ciphertext intercettato può essere trasformato in modo controllato.",
+    "fix": "OAEP introduce randomizzazione e struttura non malleabile. Il confronto fallisce se il padding non è integro."
+  },
+  {
+    "id": "mac-timing",
+    "name": "Timing su MAC",
+    "category": "Implementation",
+    "title": "Recupero del tag via timing",
+    "scenario": "Un server verifica HMAC con un confronto diretto (==). L'attaccante può misurare i tempi di risposta dall'esterno.",
+    "steps": [
+      "Il tag corretto è: A1 B2 C3 D4 (4 byte per semplicità)",
+      "Tentativo con primo byte 00: risposta in 10 µs (fallisce al primo byte)",
+      "Tentativo con primo byte A1: risposta in 12 µs (+2 µs, passa il primo byte)",
+      "Ripetere per il secondo byte: 00 → 12 µs, B2 → 14 µs",
+      "Dopo 4×256 = 1024 tentativi il tag completo è recuperato."
+    ],
+    "lesson": "La differenza di 2 µs per byte sembra piccola, ma è misurabile statisticamente su connessioni di rete. Questo attacco è stato sfruttato in librerie reali (Keyczar, 2011).",
+    "fix": "Constant-time comparison: accumula tutti i byte con XOR, restituisce true solo se XOR finale è 0."
+  },
+  {
+    "id": "dh-mitm",
+    "name": "DH senza autenticazione",
+    "category": "Protocol",
+    "title": "Man-in-the-middle su Diffie-Hellman",
+    "scenario": "Alice e Bob vogliono stabilire un segreto condiviso su un canale insicuro. Il canale è controllato da Mallory.",
+    "steps": [
+      "Alice genera a=3, pubblica A = g^a mod p = g³",
+      "Mallory intercetta A, genera m=5, pubblica M_A = g^m = g⁵ ad Alice",
+      "Bob genera b=7, pubblica B = g^b = g⁷",
+      "Mallory intercetta B, pubblica M_B = g^m = g⁵ a Bob",
+      "Alice computa K_AM = (g⁵)³ = g¹⁵. Bob computa K_BM = (g⁵)⁷ = g³⁵.",
+      "Mallory conosce entrambi i segreti: g¹⁵ e g³⁵. Può leggere e ri-cifrare tutto."
+    ],
+    "lesson": "DH stabilisce un segreto con chi risponde, non con chi si vuole parlare. Senza autenticazione dei parametri pubblici, il canale sicuro è con Mallory.",
+    "fix": "Firmare i parametri pubblici (certificati X.509, TLS), oppure usare Authenticated Key Exchange."
+  },
+  {
+    "id": "aead-nonce",
+    "name": "Nonce reuse in AES-CTR/GCM",
+    "category": "Mode misuse",
+    "title": "Catastrophic nonce reuse",
+    "scenario": "Un server cifra due messaggi diversi con AES-CTR usando lo stesso nonce e la stessa chiave.",
+    "steps": [
+      "C1 = P1 XOR KS  (KS = keystream per nonce N)",
+      "C2 = P2 XOR KS  (stesso KS, stesso nonce N)",
+      "Attaccante calcola: C1 XOR C2 = P1 XOR P2",
+      "Se P1 è parzialmente noto (es. header HTTP), si recupera P2.",
+      "In AES-GCM il riuso del nonce rivela anche la chiave di autenticazione GHASH."
+    ],
+    "lesson": "Il keystream è deterministico per (chiave, nonce). Se il nonce si ripete, i keystream coincidono e il XOR dei ciphertext è il XOR dei plaintexts.",
+    "fix": "Nonce casuale a 96 bit (probabilità di collisione trascurabile), oppure nonce contatore con garanzia di unicità per sessione."
+  }
+]

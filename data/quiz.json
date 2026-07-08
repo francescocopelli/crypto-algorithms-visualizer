@@ -1,0 +1,80 @@
+[
+  {
+    "id": "q1",
+    "algorithm": "RSA",
+    "question": "Perché non si deve mai usare RSA senza padding?",
+    "choices": [
+      "Perché è computazionalmente troppo lento",
+      "Perché è omomorfico e deterministico: un attaccante può manipolare il ciphertext in modo controllato",
+      "Perché richiede chiavi troppo lunghe",
+      "Perché non supporta la decifratura"
+    ],
+    "correct": 1,
+    "explanation": "Il plain RSA è deterministico (stesso m → stesso c) e malleabile (da c si può costruire c'=s^e·c che decifra in s·m). OAEP risolve entrambi i problemi."
+  },
+  {
+    "id": "q2",
+    "algorithm": "DH",
+    "question": "Qual è la vulnerabilità principale di Diffie-Hellman di base?",
+    "choices": [
+      "La chiave è troppo corta",
+      "Il problema del logaritmo discreto è risolto",
+      "Non autentica le parti: un attaccante MITM può negoziare segreti separati con Alice e con Bob",
+      "Non supporta chiavi temporanee"
+    ],
+    "correct": 2,
+    "explanation": "DH stabilisce un segreto con chi risponde alla negoziazione. Senza autenticazione dei parametri pubblici, il canale sicuro potrebbe essere con un attaccante."
+  },
+  {
+    "id": "q3",
+    "algorithm": "MAC",
+    "question": "Perché il confronto byte-by-byte del tag MAC è pericoloso?",
+    "choices": [
+      "Perché usa troppa CPU",
+      "Perché il tempo di risposta varia in base a quanti byte iniziali sono corretti, rivelando il tag progressivamente",
+      "Perché non supporta tag più lunghi di 16 byte",
+      "Perché introduce collisioni nel MAC"
+    ],
+    "correct": 1,
+    "explanation": "Il timing differenziale permette di recuperare il tag un byte alla volta: bastano 256×n tentativi invece di 256^n."
+  },
+  {
+    "id": "q4",
+    "algorithm": "ECC",
+    "question": "Cos'è l'invalid-curve attack?",
+    "choices": [
+      "Un attacco che fattorizza il modulo della curva",
+      "Un attacco che sfrutta la mancata validazione del punto ricevuto: si inviano punti su curve di piccolo ordine per estrarre bit della chiave privata",
+      "Un attacco che induce collisioni nel generatore",
+      "Un attacco che riusa il nonce ECDSA"
+    ],
+    "correct": 1,
+    "explanation": "Se non si verifica che il punto ricevuto sia sulla curva corretta, si possono scegliere punti su sottogruppi piccoli e usare il CRT per ricostruire la chiave privata."
+  },
+  {
+    "id": "q5",
+    "algorithm": "Hash",
+    "question": "Perché H(secret || msg) non è un MAC sicuro?",
+    "choices": [
+      "Perché SHA-2 è troppo lento",
+      "Perché un attaccante può estendere il messaggio senza conoscere il secret sfruttando la struttura Merkle–Damgård",
+      "Perché il secret viene trasmesso in chiaro",
+      "Perché non produce output di lunghezza fissa"
+    ],
+    "correct": 1,
+    "explanation": "Il length-extension attack sfrutta il fatto che lo stato finale di SHA-2 è esattamente la concatenazione che serve per proseguire il calcolo con blocchi aggiuntivi."
+  },
+  {
+    "id": "q6",
+    "algorithm": "AES",
+    "question": "Cosa succede in AES-GCM se si riusa il nonce con la stessa chiave?",
+    "choices": [
+      "Il ciphertext diventa più lungo",
+      "Si perde solo l'autenticazione",
+      "Si rivela il XOR dei plaintexts E la chiave di autenticazione GHASH",
+      "Non succede nulla di rilevante"
+    ],
+    "correct": 2,
+    "explanation": "Il nonce reuse in GCM è catastrofico: espone sia la relazione tra i plaintexts (via XOR dei ciphertext) sia la chiave H=E_k(0) che protegge il tag."
+  }
+]

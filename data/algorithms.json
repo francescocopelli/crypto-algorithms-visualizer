@@ -1,0 +1,473 @@
+[
+  {
+    "id": "des",
+    "name": "DES",
+    "family": "Symmetric",
+    "subtitle": "Feistel network a 16 round, chiave 56-bit",
+    "concepts": ["IP / FP", "Feistel network", "S-box", "56-bit key", "Key schedule"],
+    "flow": ["Plaintext 64-bit", "IP", "Round 1", "...", "Round 16", "FP", "Ciphertext 64-bit"],
+    "steps": [
+      {
+        "title": "1. Permutazione iniziale (IP)",
+        "body": "Il blocco a 64 bit viene riordinato secondo la tavola IP fissa. Il risultato viene diviso in due metà: L₀ (bit 1-32) e R₀ (bit 33-64).",
+        "visual": "split",
+        "teacher": "La permutazione iniziale non fornisce sicurezza crittografica: è un residuo del design hardware IBM originale."
+      },
+      {
+        "title": "2. Funzione F di round",
+        "body": "R viene espanso da 32 a 48 bit (E-box), viene XOrato con la sottochiave Kᵢ a 48 bit, poi compresso da 8 S-box (48→32 bit) e infine permutato (P-box).",
+        "visual": "function_f",
+        "teacher": "Le S-box sono l'unico componente non lineare di DES: l'intera sicurezza dipende dalla loro progettazione."
+      },
+      {
+        "title": "3. Struttura Feistel",
+        "body": "Il risultato della funzione F viene XOrato con Lᵢ₋₁, producendo Rᵢ. L'ex-destra diventa la nuova sinistra: Lᵢ = Rᵢ₋₁.",
+        "visual": "feistel",
+        "teacher": "La struttura Feistel garantisce reversibilità senza che D sia l'inverso matematico di E."
+      },
+      {
+        "title": "4. Key schedule",
+        "body": "La chiave a 64 bit (56 bit effettivi) genera 16 sottochiavi da 48 bit ciascuna tramite shift ciclici e permutazioni PC-1/PC-2.",
+        "visual": "keyschedule",
+        "teacher": "I 56 bit effettivi rendono DES vulnerabile a brute-force già dal progetto DES Cracker (EFF, 1998, ~22 ore)."
+      },
+      {
+        "title": "5. Permutazione finale (FP)",
+        "body": "Dopo il round 16 le metà vengono scambiate e si applica FP = IP⁻¹. Il risultato è il ciphertext.",
+        "visual": "join",
+        "teacher": "FP è l'inverso esatto di IP: se si scambia l'ordine delle sottochiavi si ottiene la decifratura identica."
+      }
+    ],
+    "attacks": [
+      {
+        "type": "Brute force",
+        "name": "Exhaustive key search",
+        "severity": "critical",
+        "text": "Con 56 bit di chiave effettiva, DES può essere rotto in meno di un giorno su hardware dedicato. Il progetto EFF DES Cracker (1998) lo dimostrò in ~22 ore.",
+        "countermeasure": "Usare AES o almeno Triple-DES (3DES), mai single DES in produzione."
+      },
+      {
+        "type": "Cryptanalysis",
+        "name": "Differential / linear cryptanalysis",
+        "severity": "high",
+        "text": "DES è resistente ma non immune: differential cryptanalysis richiede 2⁴⁷ chosen plaintexts, linear cryptanalysis 2⁴³ known plaintexts. Significativi per analisi teorica.",
+        "countermeasure": "Aumentare il numero di round (come in 3DES) o passare ad AES."
+      },
+      {
+        "type": "Weak keys",
+        "name": "Weak and semi-weak keys",
+        "severity": "medium",
+        "text": "4 weak keys producono sottochiavi identiche; 6 coppie di semi-weak keys sono inverse l'una dell'altra. Vanno escluse dalla generazione.",
+        "countermeasure": "Verificare la chiave generata contro le liste note prima di utilizzarla."
+      }
+    ],
+    "example": {
+      "title": "Esempio numerico",
+      "lines": [
+        "Blocco:  0x0123456789ABCDEF",
+        "Chiave:  0x133457799BBCDFF1",
+        "",
+        "Dopo IP:  L₀ = 0xCCAAFF00  R₀ = 0x11223344  (valori didattici)",
+        "Sottochiave K₁: 0x1B02EFFC7072",
+        "",
+        "Funzione F(R₀, K₁):",
+        "  Espansione E(R₀) = 48 bit",
+        "  XOR con K₁",
+        "  8 S-box → 32 bit",
+        "  Permutazione P → F output",
+        "",
+        "L₁ = R₀,  R₁ = L₀ XOR F(R₀, K₁)",
+        "... si ripete per tutti i 16 round"
+      ]
+    }
+  },
+  {
+    "id": "aes",
+    "name": "AES",
+    "family": "Symmetric",
+    "subtitle": "SP-network con state matrix 4×4",
+    "concepts": ["SubBytes", "ShiftRows", "MixColumns", "AddRoundKey", "Key expansion"],
+    "flow": ["Plaintext 128-bit", "Initial AddRoundKey", "9/11/13 full rounds", "Final round", "Ciphertext"],
+    "steps": [
+      {
+        "title": "1. State matrix",
+        "body": "Il plaintext a 128 bit viene organizzato in una matrice 4×4 di byte (colonne prima). Ogni trasformazione agisce sull'intera matrice.",
+        "visual": "matrix",
+        "teacher": "Visualizzare la matrice colorata per byte è il modo più efficace per spiegare le trasformazioni."
+      },
+      {
+        "title": "2. SubBytes",
+        "body": "Ogni byte viene sostituito tramite una S-box basata sul campo GF(2⁸). Fornisce non-linearità e resistenza a crittoanalisi lineare.",
+        "visual": "subbytes",
+        "teacher": "La S-box di AES è costruita in due passi: inversione in GF(2⁸) seguita da trasformazione affine."
+      },
+      {
+        "title": "3. ShiftRows",
+        "body": "Ogni riga viene ruotata ciclicamente a sinistra di 0, 1, 2 o 3 posizioni. Diffonde i byte su colonne diverse.",
+        "visual": "shiftrows",
+        "teacher": "ShiftRows garantisce che, dopo MixColumns, tutti i byte di una colonna provengano da colonne diverse del round precedente."
+      },
+      {
+        "title": "4. MixColumns",
+        "body": "Ogni colonna viene moltiplicata per una matrice fissa in GF(2⁸). Garantisce diffusione completa: ogni byte di output dipende da tutti e 4 i byte di input.",
+        "visual": "mixcols",
+        "teacher": "MixColumns è omessa nell'ultimo round: ciò semplifica l'inversione senza intaccare la sicurezza."
+      },
+      {
+        "title": "5. AddRoundKey",
+        "body": "Lo state viene XOrato con la sottochiave del round corrente (espansa dalla chiave principale tramite Key Expansion).",
+        "visual": "addrk",
+        "teacher": "AddRoundKey è l'unica operazione che dipende dalla chiave. Il resto del round è pubblicamente noto."
+      }
+    ],
+    "attacks": [
+      {
+        "type": "Implementation",
+        "name": "Side-channel (timing, cache, power)",
+        "severity": "high",
+        "text": "AES in sé è computazionalmente sicuro. Le vulnerabilità reali riguardano le implementazioni: lookup table cache-timing, power traces su hardware embedded.",
+        "countermeasure": "Constant-time implementations, masking, hardware AES-NI."
+      },
+      {
+        "type": "Mode misuse",
+        "name": "Padding oracle (CBC) / Nonce reuse (CTR/GCM)",
+        "severity": "critical",
+        "text": "In modalità CBC senza AEAD, un padding oracle permette la decifrazione completa. In GCM/CTR il riuso del nonce rivela XOR tra plaintexts.",
+        "countermeasure": "Usare sempre AEAD (AES-GCM), validare il tag prima della decifratura."
+      },
+      {
+        "type": "Theoretical",
+        "name": "Biclique attack",
+        "severity": "low",
+        "text": "Il miglior attacco noto richiede 2¹²⁶·² operazioni per AES-128: impraticabile. AES rimane sicuro contro attacchi puramente matematici.",
+        "countermeasure": "Nessuna necessità pratica di contromisura matematica per AES."
+      }
+    ],
+    "example": {
+      "title": "Esempio numerico",
+      "lines": [
+        "Plaintext:  00112233445566778899aabbccddeeff",
+        "Chiave:     000102030405060708090a0b0c0d0e0f",
+        "",
+        "State iniziale (4×4):",
+        "  00 44 88 CC",
+        "  11 55 99 DD",
+        "  22 66 AA EE",
+        "  33 77 BB FF",
+        "",
+        "Dopo SubBytes (S-box lookup di ogni byte):",
+        "  63 1B CD 4A  ...  (ogni byte trasformato)",
+        "",
+        "Dopo ShiftRows:",
+        "  riga 0 invariata, riga 1 ruotata di 1, ecc.",
+        "",
+        "Ciphertext:  69c4e0d86a7b04300d8a2598a6028c8d"
+      ]
+    }
+  },
+  {
+    "id": "rsa",
+    "name": "RSA",
+    "family": "Asymmetric",
+    "subtitle": "Fattorizzazione intera, padding OAEP",
+    "concepts": ["n = p·q", "φ(n)", "e, d", "OAEP / PSS", "CRT decryption"],
+    "flow": ["Genera p, q", "n = p·q, φ(n)", "Scegli e, calcola d", "Encrypt x^e mod n", "Padding OAEP", "Decrypt y^d mod n"],
+    "steps": [
+      {
+        "title": "1. Generazione chiavi",
+        "body": "Si scelgono due grandi primi p e q. Si calcola n=p·q e φ(n)=(p-1)(q-1). Si sceglie e con gcd(e,φ(n))=1 e si calcola d=e⁻¹ mod φ(n).",
+        "visual": "keygen",
+        "teacher": "p e q vanno eliminati dopo la generazione. Conoscere φ(n) equivale a conoscere la chiave privata."
+      },
+      {
+        "title": "2. Cifratura",
+        "body": "c = m^e mod n. L'operazione usa square-and-multiply. Il modulo n è pubblico, e è pubblico.",
+        "visual": "encrypt",
+        "teacher": "Per e=2¹⁶+1 (65537) ci vogliono solo 17 operazioni square-and-multiply, rendendo la cifratura veloce."
+      },
+      {
+        "title": "3. Decifratura",
+        "body": "m = c^d mod n. In pratica si usa CRT per accelerare il calcolo di un fattore ~4.",
+        "visual": "decrypt",
+        "teacher": "La decifratura è 3 ordini di grandezza più lenta della simmetrica: RSA si usa per key transport, non per bulk data."
+      },
+      {
+        "title": "4. Padding OAEP",
+        "body": "Prima di cifrare, il messaggio viene randomizzato con OAEP (Optimal Asymmetric Encryption Padding). Impedisce attacchi deterministici e CCA.",
+        "visual": "padding",
+        "teacher": "Usare RSA senza padding non è 'RSA semplificato': è RSA insicuro. Non si tratta di un'ottimizzazione opzionale."
+      },
+      {
+        "title": "5. Verifica del padding",
+        "body": "Alla decifratura si controlla la struttura del padding. Se il controllo fallisce non si rivela nulla sul messaggio.",
+        "visual": "padcheck",
+        "teacher": "Un padding oracle espone queste informazioni e consente di decifrare messaggi arbitrari. Sempre usare Encrypt-then-MAC o AEAD."
+      }
+    ],
+    "attacks": [
+      {
+        "type": "Protocol",
+        "name": "Malleability (plain RSA)",
+        "severity": "critical",
+        "text": "Se non si usa padding, RSA è omomorfico: c' = s^e · c mod n decifra in s·m. L'attaccante non conosce m ma controlla la trasformazione.",
+        "countermeasure": "OAEP per encryption, PSS per signature. Mai plain RSA."
+      },
+      {
+        "type": "Mathematical",
+        "name": "Low exponent / Broadcast attack",
+        "severity": "high",
+        "text": "Se e=3 e lo stesso m viene cifrato verso 3 destinatari con moduli diversi, CRT recupera m³ e si estrae la radice cubica intera.",
+        "countermeasure": "Padding randomizzato diverso per ogni destinatario."
+      },
+      {
+        "type": "Implementation",
+        "name": "Fault attack su CRT-RSA",
+        "severity": "high",
+        "text": "Se si induce un errore durante la decifratura CRT, si ottiene una firma o decifratura errata. Dal risultato si può fattorizzare n con un GCD.",
+        "countermeasure": "Verificare il risultato prima di restituirlo. Non esporre risultati intermedi."
+      },
+      {
+        "type": "Mathematical",
+        "name": "Common modulus attack",
+        "severity": "high",
+        "text": "Se più utenti condividono lo stesso n con esponenti diversi, si può fattorizzare n a partire dalla chiave privata di uno di loro.",
+        "countermeasure": "Ogni entità deve avere il proprio modulo n indipendente."
+      }
+    ],
+    "example": {
+      "title": "Esempio numerico (valori ridotti per didattica)",
+      "lines": [
+        "p = 47,  q = 71",
+        "n = p·q = 3337",
+        "φ(n) = 46·70 = 3220",
+        "e = 79  (gcd(79, 3220) = 1 ✓)",
+        "d = e⁻¹ mod 3220 = 1019",
+        "",
+        "Plaintext: m = 688",
+        "Ciphertext: c = 688^79 mod 3337 = 1570",
+        "Decifratura: m = 1570^1019 mod 3337 = 688 ✓",
+        "",
+        "Malleability demo:",
+        "  s = 2",
+        "  c' = 2^79 · 1570 mod 3337 = ?",
+        "  Dec(c') = 2 · 688 mod 3337 = 1376"
+      ]
+    }
+  },
+  {
+    "id": "ecc",
+    "name": "ECC / ECDH",
+    "family": "Elliptic Curves",
+    "subtitle": "ECDLP su gruppo di punti, chiavi più corte",
+    "concepts": ["Point addition", "Point doubling", "Generator G", "dP = public key", "ECDLP"],
+    "flow": ["Curva E(p)", "Genera G", "d privato", "T = dP public", "ECDH shared secret"],
+    "steps": [
+      {
+        "title": "1. La curva e il gruppo",
+        "body": "Si lavora su una curva ellittica E: y² = x³ + ax + b mod p. L'insieme dei punti che soddisfano l'equazione forma un gruppo ciclico.",
+        "visual": "curve",
+        "teacher": "La sicurezza dipende dall'ordine del gruppo: deve essere un grande primo o avere un grande sottogruppo primo (cofactor=1 è ideale)."
+      },
+      {
+        "title": "2. Point addition e doubling",
+        "body": "L'operazione di gruppo '+' su EC ha interpretazione geometrica: la corda che passa per P e Q incontra la curva in un terzo punto riflesso.",
+        "visual": "pointadd",
+        "teacher": "Point doubling (P+P) usa la tangente. Animare entrambe le operazioni è il modo più efficace per spiegare ECC a chi conosce DH."
+      },
+      {
+        "title": "3. Point multiplication (scalar mult)",
+        "body": "T = d·G si calcola con double-and-add: si scansiona d bit a bit, raddoppiando e aggiungendo G se il bit è 1.",
+        "visual": "scalarmult",
+        "teacher": "La complessità è O(log d) operazioni di gruppo. Il problema inverso — trovare d da G e T — è l'ECDLP, computazionalmente intrattabile."
+      },
+      {
+        "title": "4. ECDH key agreement",
+        "body": "Alice pubblica A=aG, Bob pubblica B=bG. Il segreto condiviso è a·B = b·A = abG. Chi non conosce a o b non può ricavarlo solo da A e B.",
+        "visual": "ecdh",
+        "teacher": "Il segreto non va usato direttamente come chiave: va passato ad una KDF per derivare byte uniformi."
+      },
+      {
+        "title": "5. Standard curves",
+        "body": "In produzione si usano curve standardizzate: P-256, P-384 (NIST), Curve25519 (Bernstein), brainpoolP256r1. Non si definiscono curve personalizzate.",
+        "visual": "standards",
+        "teacher": "Curve25519 è progettata per essere intrinsecamente resistente a invalid-curve attacks e più semplice da implementare correttamente."
+      }
+    ],
+    "attacks": [
+      {
+        "type": "Implementation",
+        "name": "Side-channel su scalar multiplication",
+        "severity": "high",
+        "text": "L'algoritmo double-and-add naïf ha pattern di esecuzione diversi per bit 0 e 1, rivelando la chiave privata via timing o power analysis.",
+        "countermeasure": "Montgomery ladder (esegue sempre le stesse operazioni indipendentemente dal bit), constant-time libraries."
+      },
+      {
+        "type": "Input validation",
+        "name": "Invalid-curve attack",
+        "severity": "critical",
+        "text": "Se non si verifica che il punto ricevuto sia sulla curva corretta, un attaccante può inviare punti su curve di piccolo ordine e recuperare bit della chiave privata.",
+        "countermeasure": "Validare sempre il punto ricevuto: verificare che sia sulla curva, che non sia il punto all'infinito, e che abbia l'ordine corretto."
+      },
+      {
+        "type": "Randomness",
+        "name": "Nonce/k reuse in ECDSA",
+        "severity": "critical",
+        "text": "Se il nonce k viene riusato in due firme ECDSA, la chiave privata si recupera algebricamente. Sony PS3 fu compromessa così.",
+        "countermeasure": "Usare k deterministico e sicuro (RFC 6979) oppure una sorgente di entropia genuina."
+      }
+    ],
+    "example": {
+      "title": "Esempio numerico (curva educativa mod 17)",
+      "lines": [
+        "Curva: E: y² = x³ + 2x + 2 mod 17",
+        "Ordine |E| = 19 (primo)",
+        "Generatore G = (5, 1)",
+        "",
+        "Point doubling: 2G",
+        "  λ = (3·5² + 2) · (2·1)⁻¹ mod 17",
+        "  λ = 77 · 2⁻¹ mod 17 = 9 · 9 mod 17 = 81 mod 17 = 13",
+        "  x₂ = 13² - 5 - 5 mod 17 = 169 - 10 mod 17 = 6",
+        "  y₂ = 13·(5-6) - 1 mod 17 = -14 mod 17 = 3",
+        "  → 2G = (6, 3) ✓",
+        "",
+        "ECDH:",
+        "  Alice: a=3, A=3G=(10,6)",
+        "  Bob:   b=5, B=5G=(9,16)",
+        "  Shared: a·B = 3·(9,16) = (7,11) = b·A ✓"
+      ]
+    }
+  },
+  {
+    "id": "hash",
+    "name": "Hash Functions",
+    "family": "Integrity",
+    "subtitle": "Compressione deterministica one-way",
+    "concepts": ["Preimage resistance", "2nd preimage", "Collision resistance", "Merkle–Damgård", "SHA-2 / SHA-3"],
+    "flow": ["Message", "Padding", "Block split", "Compression f", "Chaining", "Digest"],
+    "steps": [
+      {
+        "title": "1. Padding e blocchi",
+        "body": "Il messaggio viene esteso con un bit 1, zeri, e la lunghezza in bit (Merkle–Damgård strengthening). Poi diviso in blocchi.",
+        "visual": "padding",
+        "teacher": "Il padding deterministico fa sì che due messaggi di lunghezze diverse non producano mai la stessa sequenza di blocchi."
+      },
+      {
+        "title": "2. Funzione di compressione",
+        "body": "La funzione di compressione prende lo stato corrente h_{i-1} e il blocco mᵢ, producendo il nuovo stato hᵢ.",
+        "visual": "compress",
+        "teacher": "La sicurezza dell'intera hash function si riduce alla sicurezza della funzione di compressione."
+      },
+      {
+        "title": "3. Chaining e digest finale",
+        "body": "L'output dell'ultimo blocco è il digest. In SHA-256 è 256 bit; in SHA-3 la struttura sponge è diversa da Merkle–Damgård.",
+        "visual": "chain",
+        "teacher": "SHA-3 usa una struttura sponge che non è soggetta a length-extension attack, a differenza di SHA-2."
+      }
+    ],
+    "attacks": [
+      {
+        "type": "Cryptanalysis",
+        "name": "Collision attack",
+        "severity": "high",
+        "text": "Per una hash di n bit, il birthday bound garantisce collisioni con ~2^(n/2) query. Per MD5 (128 bit) sono noti attacchi pratici. SHA-1 è collided.",
+        "countermeasure": "SHA-256 minimo, SHA-3 o SHA-512 per applicazioni critiche."
+      },
+      {
+        "type": "Structural",
+        "name": "Length extension attack",
+        "severity": "high",
+        "text": "Su costruzioni Merkle–Damgård (SHA-1, SHA-2), chi conosce H(m) può calcolare H(m||ext) senza conoscere m. Rompe naive secret-prefix MACs.",
+        "countermeasure": "Usare HMAC, non H(key||msg). SHA-3 non è vulnerabile."
+      }
+    ],
+    "example": {
+      "title": "Esempio: length-extension",
+      "lines": [
+        "Scenario:",
+        "  Server calcola t = H(secret || msg)",
+        "  Client conosce t e msg, non secret",
+        "",
+        "Attacco:",
+        "  Attaccante imposta IV = t (lo stato finale)",
+        "  Calcola H'(msg || padding || ext)",
+        "  senza conoscere secret",
+        "",
+        "Perché funziona:",
+        "  Merkle–Damgård riprende da qualsiasi stato",
+        "  t è esattamente lo stato dopo secret||msg",
+        "",
+        "Fix: HMAC = H(k XOR opad || H(k XOR ipad || msg))"
+      ]
+    }
+  },
+  {
+    "id": "mac",
+    "name": "MAC / HMAC / CMAC",
+    "family": "Integrity",
+    "subtitle": "Autenticazione simmetrica di messaggi",
+    "concepts": ["Tag", "Forgery", "HMAC", "CMAC", "Timing attack"],
+    "flow": ["msg + key", "HMAC inner hash", "HMAC outer hash", "Tag t", "Verify"],
+    "steps": [
+      {
+        "title": "1. HMAC: inner hash",
+        "body": "HMAC calcola prima H((k XOR ipad) || m). Il padding ipad=0x36 è ripetuto fino a riempire un blocco.",
+        "visual": "inner",
+        "teacher": "La costruzione a doppio hash di HMAC è necessaria: sia il prefix-only sia il suffix-only scheme sono forgeable."
+      },
+      {
+        "title": "2. HMAC: outer hash",
+        "body": "Il risultato dell'inner hash viene risottoposto ad hash: H((k XOR opad) || inner). opad=0x5C.",
+        "visual": "outer",
+        "teacher": "La sicurezza di HMAC si riduce alla collision resistance della funzione H sottostante. Se H è sicura, HMAC è sicuro."
+      },
+      {
+        "title": "3. Verifica constant-time",
+        "body": "Il tag ricevuto e quello calcolato vanno confrontati byte per byte con XOR accumulato, non con == diretto. Questo evita il timing leak.",
+        "visual": "verify",
+        "teacher": "HMAC(key, tag) == HMAC(key, received_tag) è una soluzione robusta: l'attaccante non sa cosa viene confrontato."
+      }
+    ],
+    "attacks": [
+      {
+        "type": "Implementation",
+        "name": "Timing attack sul confronto",
+        "severity": "high",
+        "text": "Un confronto che si ferma al primo byte errato rivela quanti byte iniziali del tag sono corretti, permettendo un recupero byte-per-byte.",
+        "countermeasure": "Constant-time comparison via XOR accumulato oppure HMAC(key, received_tag) == HMAC(key, correct_tag)."
+      },
+      {
+        "type": "Construction",
+        "name": "Forgery su raw CBC-MAC",
+        "severity": "high",
+        "text": "rawCBC-MAC (senza cifratura finale) è falsificabile: da t=MAC(x) si ottiene t=MAC(x || x⊕t) senza chiave.",
+        "countermeasure": "CMAC (CBC-MAC con chiavi dedicate K1/K2) o HMAC."
+      },
+      {
+        "type": "Protocol",
+        "name": "Replay attack",
+        "severity": "medium",
+        "text": "Un MAC valido può essere rigiocato: il ricevente non sa se il messaggio è nuovo o ritrasmesso.",
+        "countermeasure": "Aggiungere a livello di protocollo nonce, sequence number o timestamp."
+      }
+    ],
+    "example": {
+      "title": "Esempio: timing attack passo-passo",
+      "lines": [
+        "Tag corretto: A1 B2 C3 D4 E5 F6 G7 H8",
+        "",
+        "Round 1 – primo byte:",
+        "  Tentativo 00 xx xx ... → risposta 10 µs (immediato)",
+        "  Tentativo A1 xx xx ... → risposta 12 µs (+2 µs)",
+        "  → primo byte è A1",
+        "",
+        "Round 2 – secondo byte:",
+        "  Tentativo A1 00 xx ... → 12 µs",
+        "  Tentativo A1 B2 xx ... → 14 µs (+2 µs)",
+        "  → secondo byte è B2",
+        "",
+        "... (ripetuto 8 volte) ...",
+        "Costo totale: 256×8 = 2048 tentativi invece di 256⁸"
+      ]
+    }
+  }
+]
