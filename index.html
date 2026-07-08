@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crypto Algorithms Visualizer</title>
+  <style>
+    :root {
+      --bg: #101417;
+      --panel: #182025;
+      --panel2: #1f2a31;
+      --text: #eef6f8;
+      --muted: #a9bcc3;
+      --accent: #57c7b6;
+      --accent2: #69a8ff;
+      --danger: #ff7aa2;
+      --warn: #ffb86b;
+      --ok: #9ae66e;
+      --border: rgba(255,255,255,.08);
+      --shadow: 0 16px 40px rgba(0,0,0,.25);
+      --radius: 22px;
+    }
+    [data-theme="light"] {
+      --bg: #f4f7f8;
+      --panel: #ffffff;
+      --panel2: #eef4f6;
+      --text: #152126;
+      --muted: #5f727a;
+      --accent: #0e8a7d;
+      --accent2: #286fd6;
+      --danger: #c24772;
+      --warn: #b16d1a;
+      --ok: #468b2b;
+      --border: rgba(0,0,0,.08);
+      --shadow: 0 16px 40px rgba(0,0,0,.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, Arial, sans-serif;
+      background: radial-gradient(circle at top left, rgba(87,199,182,.14), transparent 25%), var(--bg);
+      color: var(--text);
+    }
+    .app { display: grid; grid-template-columns: 300px 1fr; min-height: 100vh; }
+    .sidebar {
+      padding: 24px;
+      background: rgba(255,255,255,.02);
+      border-right: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      backdrop-filter: blur(10px);
+    }
+    .brand { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom: 24px; }
+    .brand h1 { font-size: 1.1rem; margin:0; }
+    .theme-toggle, .mode-toggle, .quiz-btn, .nav button, .lab-controls button {
+      border: 1px solid var(--border);
+      background: var(--panel2);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+    .nav { display:grid; gap:10px; }
+    .nav button { width:100%; text-align:left; border-radius:16px; }
+    .nav button.active { background: rgba(87,199,182,.12); border-color: rgba(87,199,182,.35); }
+    main { padding: 28px; }
+    .hero, .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .hero {
+      padding: 28px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .panel { padding: 24px; margin-bottom: 24px; }
+    .grid { display:grid; grid-template-columns: 1.25fr .75fr; gap:24px; }
+    .stats { display:grid; grid-template-columns: repeat(2,1fr); gap:14px; }
+    .stat { background: var(--panel2); padding: 16px; border-radius: 18px; border:1px solid var(--border); }
+    h2, h3, h4 { margin-top:0; }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .chip { padding:8px 12px; background:var(--panel2); border-radius:999px; color:var(--muted); border:1px solid var(--border); font-size:.9rem; }
+    .steps, .attacks, .examples, .quiz-area { display:grid; gap:14px; }
+    .card { background:var(--panel2); border:1px solid var(--border); border-radius:18px; padding:18px; }
+    .step-num {
+      display:inline-grid; place-items:center; width:34px; height:34px;
+      border-radius:10px; background:rgba(87,199,182,.14); color:var(--accent); font-weight:700; margin-bottom:8px;
+    }
+    .attack-type { color: var(--danger); font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
+    .mini-flow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .node { padding:8px 10px; background:var(--panel2); border:1px solid var(--border); border-radius:12px; }
+    .arrow { color: var(--accent); font-weight:700; }
+    .lab-box {
+      background: linear-gradient(135deg, rgba(255,122,162,.08), rgba(105,168,255,.08));
+      border: 1px solid rgba(255,122,162,.2);
+      border-radius: 18px;
+      padding: 18px;
+      margin-top: 12px;
+    }
+    .output {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.18);
+      border:1px solid var(--border);
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .teacher-note {
+      border-left: 4px solid var(--accent2);
+      padding: 12px 14px;
+      background: rgba(105,168,255,.08);
+      border-radius: 12px;
+      margin-top: 10px;
+      display:none;
+    }
+    .teacher .teacher-note { display:block; }
+    .quiz-choice {
+      display:block;
+      width:100%;
+      text-align:left;
+      margin-top:8px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:var(--panel2);
+      color:var(--text);
+      cursor:pointer;
+    }
+    .quiz-feedback { margin-top: 12px; color: var(--muted); }
+    .example-math {
+      font-family: ui-monospace, monospace;
+      background: rgba(105,168,255,.08);
+      border: 1px solid rgba(105,168,255,.18);
+      padding: 12px;
+      border-radius: 12px;
+      white-space: pre-wrap;
+    }
+    @media (max-width: 1000px) {
+      .app, .hero, .grid { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+    }
+  </style>
+</head>
+<body>
+<div class="app" id="appRoot">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>Crypto Visualizer</h1>
+      <button class="theme-toggle" id="themeToggle">Tema</button>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+      <button class="mode-toggle" id="modeToggle">Modalità studente</button>
+      <button class="quiz-btn" id="quizToggle">Apri quiz</button>
+    </div>
+    <div class="nav" id="nav"></div>
+  </aside>
+
+  <main>
+    <section class="hero">
+      <div>
+        <h2>Visualizzatore interattivo di algoritmi e attacchi</h2>
+        <p>Questa versione finale integra animazioni passo-passo semplificate, quiz sugli attacchi, switch studente/docente, esempi numerici e una sezione Attack Lab per mostrare visivamente perché padding o autenticazione contano.</p>
+        <div class="chips">
+          <span class="chip">DES</span>
+          <span class="chip">AES</span>
+          <span class="chip">RSA</span>
+          <span class="chip">ECC</span>
+          <span class="chip">Attack Lab</span>
+          <span class="chip">Quiz</span>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><strong>Step-by-step</strong><div>Vista guidata per algoritmo</div></div>
+        <div class="stat"><strong>Attack Lab</strong><div>Failure mode visuali</div></div>
+        <div class="stat"><strong>Teacher mode</strong><div>Note esplicative avanzate</div></div>
+        <div class="stat"><strong>Numeric examples</strong><div>DES/AES/RSA/ECC</div></div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section>
+        <div class="panel">
+          <div id="viewer"></div>
+        </div>
+        <div class="panel">
+          <h3>Attack Lab</h3>
+          <p>Scegli uno scenario e osserva perché una costruzione insicura fallisce.</p>
+          <div class="lab-controls" id="labControls"></div>
+          <div class="lab-box">
+            <div id="labTitle"></div>
+            <div id="labDesc"></div>
+            <div class="output" id="labOutput"></div>
+          </div>
+        </div>
+      </section>
+
+      <aside>
+        <div class="panel">
+          <h3>Vista rapida</h3>
+          <div id="miniFlows"></div>
+        </div>
+        <div class="panel" id="quizPanel" style="display:none;">
+          <h3>Quiz attacchi</h3>
+          <div class="quiz-area" id="quizArea"></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<script>
+const algorithms = [
+  {
+    id:'des',
+    name:'DES',
+    subtitle:'Feistel network a 16 round',
+    concepts:['IP/FP','Feistel','S-box','56-bit key'],
+    flow:['Plaintext','IP','16 rounds','FP','Ciphertext'],
+    steps:[
+      'Permutazione iniziale del blocco e divisione in L0 e R0.',
+      'Ogni round applica espansione, XOR con sottochiave, S-box e permutazione.',
+      'La metà destra aggiorna la sinistra secondo la struttura di Feistel.',
+      'Dopo 16 round si ricompone il blocco e si applica la permutazione finale.'
+    ],
+    attacks:[
+      {type:'Brute force', text:'La chiave di 56 bit rende DES vulnerabile a exhaustive key search.'},
+      {type:'Cryptanalysis', text:'DES è il caso classico per differential e linear cryptanalysis.'},
+      {type:'Weak keys', text:'Esistono chiavi deboli e semi-deboli che vanno menzionate in una scheda avanzata.'}
+    ],
+    example:'Esempio reale semplificato:\nBlocco: 0x0123456789ABCDEF\nChiave: 0x133457799BBCDFF1\nIdea didattica: mostra L0/R0, una sottochiave, e l’effetto di una S-box.',
+    teacher:'Nota docente: per DES conviene offrire sia una vista bit-level sia una vista round-level, perché la prima è utile a capire IP/E/P boxes, la seconda a capire la diffusione.'
+  },
+  {
+    id:'aes',
+    name:'AES',
+    subtitle:'SP-network con state matrix',
+    concepts:['SubBytes','ShiftRows','MixColumns','AddRoundKey'],
+    flow:['Input','State 4x4','Rounds','Final round','Output'],
+    steps:[
+      'Il plaintext entra come matrice 4x4 di byte.',
+      'SubBytes sostituisce ogni byte con una lookup S-box.',
+      'ShiftRows e MixColumns diffondono l’informazione nella matrice.',
+      'AddRoundKey incorpora la chiave di round; l’ultimo round non applica MixColumns.'
+    ],
+    attacks:[
+      {type:'Implementation', text:'Le implementazioni possono soffrire timing, cache e power analysis.'},
+      {type:'Mode misuse', text:'CBC con padding non validato o GCM con nonce riusato crea vulnerabilità gravi.'},
+      {type:'Oracle', text:'La debolezza spesso non è AES ma il modo in cui il protocollo reagisce a errori o padding.'}
+    ],
+    example:'Esempio reale semplificato:\nState iniziale = matrice 4x4\nRound 1 = SubBytes -> ShiftRows -> MixColumns -> AddRoundKey\nSuggerimento: colorare i byte dopo ogni trasformazione.',
+    teacher:'Nota docente: AES va spiegato visivamente a livello di byte, non di bit. Il vantaggio principale di una UI è rendere evidente la diffusione sulle colonne.'
+  },
+  {
+    id:'rsa',
+    name:'RSA',
+    subtitle:'Fattorizzazione, padding, malleability',
+    concepts:['n=pq','phi(n)','e,d','OAEP'],
+    flow:['p,q','n,phi','e,d','Encrypt/Decrypt','Padding check'],
+    steps:[
+      'Si generano p e q, poi n e phi(n).',
+      'Si sceglie e e si calcola d come inverso modulo phi(n).',
+      'La cifratura usa x^e mod n, la decifratura y^d mod n.',
+      'In pratica si usa padding sicuro come OAEP.'
+    ],
+    attacks:[
+      {type:'CCA', text:'Il plain RSA è malleabile e vulnerabile ad adaptive chosen-ciphertext attacks.'},
+      {type:'Low exponent', text:'Messaggi piccoli o stesso messaggio verso più destinatari possono essere attaccati.'},
+      {type:'CRT fault', text:'CRT-RSA accelera la decifratura ma introduce superficie per fault injection.'}
+    ],
+    example:'Esempio numerico:\np=47, q=71\nn=3337, phi=3220\ne=79, d=1019\nm=966 -> c = m^e mod n\nQuesto è perfetto per un pannello con calcoli guidati.',
+    teacher:'Nota docente: la UI deve rendere esplicito che RSA senza padding non è “una versione semplificata”, ma una costruzione insicura.'
+  },
+  {
+    id:'ecc',
+    name:'ECC / ECDH',
+    subtitle:'Curve, punti, ECDLP',
+    concepts:['Point addition','Point doubling','Generator G','dP'],
+    flow:['Curve','Generator G','double-and-add','Public key dP','Shared secret'],
+    steps:[
+      'Si parte da una curva e da un punto generatore G.',
+      'La chiave privata è uno scalare d.',
+      'La chiave pubblica è il punto dP ottenuto con point multiplication.',
+      'In ECDH entrambe le parti combinano il proprio segreto con la chiave pubblica altrui.'
+    ],
+    attacks:[
+      {type:'Side-channel', text:'Scalar multiplication naïf può perdere informazione via timing o power analysis.'},
+      {type:'Invalid curve', text:'Punti non validati possono essere usati per invalid-curve attacks.'},
+      {type:'Bad randomness', text:'Chiavi effimere o nonce deboli rompono la sicurezza di protocolli e firme.'}
+    ],
+    example:'Esempio didattico:\nE: y^2 = x^3 + 2x + 2 mod 17\nG=(5,1)\n2G=(6,3)\n3G=(10,6)\nLa UI può animare doubling e addition.',
+    teacher:'Nota docente: ECC è il punto in cui una visualizzazione geometrica semplificata aiuta davvero a capire il legame fra algebra e protocollo.'
+  }
+];
+
+const labs = [
+  {
+    id:'rsa-padding',
+    name:'RSA senza padding',
+    title:'Perché il plain RSA fallisce',
+    desc:'Se il ciphertext può essere manipolato in modo controllato, il plaintext subisce trasformazioni prevedibili.',
+    output:'Attaccante intercetta c = m^e mod n\nSceglie s\nCalcola c\' = s^e · c mod n\nIl destinatario decifra m\' = s · m mod n\nRisultato: malleability, nessuna sicurezza CCA.'
+  },
+  {
+    id:'mac-timing',
+    name:'Timing sul MAC',
+    title:'Perché il confronto naïf del tag è pericoloso',
+    desc:'Un confronto che si ferma al primo byte errato rivela progressivamente il tag corretto.',
+    output:'Tag vero: A1 B2 C3 D4 ...\nTentativo 1: 00 ... -> risposta veloce\nTentativo 2: A1 00 ... -> leggermente più lenta\nTentativo 3: A1 B2 00 ... -> ancora più lenta\nRisultato: recupero byte-per-byte del tag.'
+  },
+  {
+    id:'dh-mitm',
+    name:'DH senza autenticazione',
+    title:'Perché Diffie-Hellman da solo non basta',
+    desc:'Senza autenticazione delle chiavi pubbliche, un attaccante può negoziare due segreti diversi.',
+    output:'Alice invia g^a -> MITM intercetta\nMITM invia g^m a Bob\nBob invia g^b -> MITM intercetta\nMITM invia g^m ad Alice\nAlice condivide segreto con MITM, Bob condivide segreto con MITM.'
+  },
+  {
+    id:'aead-nonce',
+    name:'Riutilizzo nonce',
+    title:'Perché riusare il nonce è devastante',
+    desc:'Molti schemi AEAD/CTR dipendono in modo critico dall’unicità del nonce.',
+    output:'Ciphertext1 = Plaintext1 XOR stream(nonce,key)\nCiphertext2 = Plaintext2 XOR stream(nonce,key)\nSe il nonce è uguale, gli stream coincidono\nC1 XOR C2 = P1 XOR P2\nRisultato: perdita di confidenzialità.'
+  }
+];
+
+const quiz = [
+  {
+    q:'Qual è l’attacco più tipico contro Diffie-Hellman senza autenticazione?',
+    choices:['Collision attack','Man-in-the-middle','Padding oracle','Birthday attack'],
+    correct:1,
+    why:'DH stabilisce un segreto, ma non autentica automaticamente chi sta dall’altra parte.'
+  },
+  {
+    q:'Perché il plain RSA non va usato?',
+    choices:['Perché è troppo veloce','Perché è malleabile e deterministico','Perché usa XOR','Perché richiede nonce'],
+    correct:1,
+    why:'Senza padding sicuro, RSA soffre malleability e chosen-ciphertext style attacks.'
+  },
+  {
+    q:'Quale problema è tipico di un confronto MAC non constant-time?',
+    choices:['Replay','Timing leak','Hash collision garantita','Key escrow'],
+    correct:1,
+    why:'Il tempo di verifica può rivelare quanti byte iniziali del tag sono corretti.'
+  }
+];
+
+const nav = document.getElementById('nav');
+const viewer = document.getElementById('viewer');
+const miniFlows = document.getElementById('miniFlows');
+const appRoot = document.getElementById('appRoot');
+const modeToggle = document.getElementById('modeToggle');
+const quizToggle = document.getElementById('quizToggle');
+const quizPanel = document.getElementById('quizPanel');
+const quizArea = document.getElementById('quizArea');
+const labControls = document.getElementById('labControls');
+const labTitle = document.getElementById('labTitle');
+const labDesc = document.getElementById('labDesc');
+const labOutput = document.getElementById('labOutput');
+let current = 'des';
+let labCurrent = labs[0].id;
+let teacherMode = false;
+
+function renderNav() {
+  nav.innerHTML = algorithms.map(a => `<button class="${a.id===current?'active':''}" data-id="${a.id}"><strong>${a.name}</strong><br><small>${a.subtitle}</small></button>`).join('');
+  nav.querySelectorAll('button').forEach(b => b.onclick = () => { current = b.dataset.id; renderAll(); });
+}
+
+function renderViewer() {
+  const a = algorithms.find(x => x.id === current);
+  viewer.innerHTML = `
+    <h3>${a.name}</h3>
+    <p>${a.subtitle}</p>
+    <div class="chips">${a.concepts.map(c => `<span class="chip">${c}</span>`).join('')}</div>
+
+    <h4 style="margin-top:22px">Animazione passo-passo</h4>
+    <div class="steps">
+      ${a.steps.map((s,i) => `<div class="card"><div class="step-num">${i+1}</div><div>${s}</div></div>`).join('')}
+    </div>
+
+    <h4 style="margin-top:22px">Attacchi possibili</h4>
+    <div class="attacks">
+      ${a.attacks.map(att => `<div class="card"><div class="attack-type">${att.type}</div><div>${att.text}</div></div>`).join('')}
+    </div>
+
+    <h4 style="margin-top:22px">Esempio numerico</h4>
+    <div class="examples">
+      <div class="example-math">${a.example}</div>
+    </div>
+
+    <div class="teacher-note">${a.teacher}</div>
+  `;
+}
+
+function renderMiniFlows() {
+  miniFlows.innerHTML = algorithms.map(a => `
+    <div class="card" style="margin-bottom:12px;">
+      <strong>${a.name}</strong>
+      <div class="mini-flow" style="margin-top:10px;">
+        ${a.flow.map((f,i) => `${i?'<span class="arrow">→</span>':''}<span class="node">${f}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderLab() {
+  labControls.innerHTML = labs.map(l => `<button data-id="${l.id}" ${l.id===labCurrent?'style="background:rgba(255,122,162,.14); border-color:rgba(255,122,162,.35);"':''}>${l.name}</button>`).join(' ');
+  labControls.querySelectorAll('button').forEach(b => b.onclick = () => { labCurrent = b.dataset.id; renderLab(); });
+  const l = labs.find(x => x.id === labCurrent);
+  labTitle.innerHTML = `<h4>${l.title}</h4>`;
+  labDesc.textContent = l.desc;
+  labOutput.textContent = l.output;
+}
+
+function renderQuiz() {
+  quizArea.innerHTML = quiz.map((q, idx) => `
+    <div class="card">
+      <strong>${idx+1}. ${q.q}</strong>
+      ${q.choices.map((c,i) => `<button class="quiz-choice" data-q="${idx}" data-i="${i}">${c}</button>`).join('')}
+      <div class="quiz-feedback" id="feedback-${idx}"></div>
+    </div>
+  `).join('');
+  quizArea.querySelectorAll('.quiz-choice').forEach(btn => {
+    btn.onclick = () => {
+      const q = quiz[btn.dataset.q];
+      const selected = Number(btn.dataset.i);
+      const fb = document.getElementById(`feedback-${btn.dataset.q}`);
+      fb.textContent = selected === q.correct ? `Corretto. ${q.why}` : `Non corretto. ${q.why}`;
+    };
+  });
+}
+
+function renderAll() {
+  renderNav();
+  renderViewer();
+  renderMiniFlows();
+  renderLab();
+  renderQuiz();
+  document.body.classList.toggle('teacher', teacherMode);
+  modeToggle.textContent = teacherMode ? 'Modalità docente' : 'Modalità studente';
+}
+
+modeToggle.onclick = () => {
+  teacherMode = !teacherMode;
+  renderAll();
+};
+quizToggle.onclick = () => {
+  quizPanel.style.display = quizPanel.style.display === 'none' ? 'block' : 'none';
+};
+document.getElementById('themeToggle').onclick = () => {
+  const root = document.documentElement;
+  root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+};
+
+renderAll();
+</script>
+</body>
+</html>
