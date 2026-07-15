@@ -1,6 +1,6 @@
 // Crypto Algorithms Visualizer — app.js
 // 9 algorithm families, 6 attack scenarios, 6 guided examples, 12 quiz questions
-// Student / Teacher mode, dark/light theme toggle
+// Student / Teacher / Exercise mode, dark/light theme toggle
 
 const ALGORITHMS = [
   {
@@ -144,137 +144,21 @@ const ALGORITHMS = [
 ];
 
 const ATTACKS = [
-  {
-    id: 'ecb', name: 'ECB leakage', type: 'Chosen-plaintext', target: 'ECB',
-    title: 'ECB pattern leakage', risk: 84,
-    summary: 'Equal plaintext blocks → equal ciphertext blocks; file structure survives encryption.',
-    experiment: 'Encrypt a bitmap with repeated 16-byte blocks under ECB. Large uniform regions map to repeated ciphertext blocks and the image outline remains visible.',
-    why: 'ECB lacks semantic security: it deterministically maps each equal block to the same ciphertext, preserving visible structure.',
-    fix: 'Use randomized or nonce-based modes (CBC + MAC, or preferably GCM / ChaCha20-Poly1305).',
-    observations: ['Repeated input block → repeated ciphertext block', 'No diffusion across block boundaries', 'Image or file structure remains recognizable after encryption']
-  },
-  {
-    id: 'des-brute', name: 'DES brute force', type: 'Exhaustive search', target: 'DES',
-    title: '56-bit key exhaustive search', risk: 91,
-    summary: 'DES has a 56-bit effective key — far too small against modern hardware.',
-    experiment: 'Estimate the effort for 2⁵⁶ key candidates and compare against dedicated FPGA arrays or distributed search systems.',
-    why: 'Security margins decay with hardware growth; what cost millions in 1977 is now trivially achievable.',
-    fix: 'Use modern ciphers with at least 128-bit keys, e.g. AES-128 or AES-256.',
-    observations: ['2⁵⁶ ≈ 7.2 × 10¹⁶ keys — broken in hours with specialized hardware', '56-bit keys are no longer future-proof', 'Legacy protocol support is not a security argument']
-  },
-  {
-    id: 'cbc-flip', name: 'CBC bit flipping', type: 'Ciphertext manipulation', target: 'CBC',
-    title: 'CBC malleability without MAC', risk: 79,
-    summary: 'Without integrity protection, attackers flip targeted plaintext bits by modifying ciphertext.',
-    experiment: 'Flip a chosen bit in ciphertext block Cᵢ and inspect how plaintext block Pᵢ₊₁ changes after decryption.',
-    why: 'CBC decryption XORs the previous ciphertext block into the next plaintext block, enabling controlled corruption.',
-    fix: 'Authenticate ciphertexts with a MAC (Encrypt-then-MAC) or use AEAD.',
-    observations: ['Controlled bit flips in the following decrypted block', 'Tampering survives if no integrity check exists', 'Padding oracles can amplify the attack further']
-  },
-  {
-    id: 'textbook-rsa', name: 'Textbook RSA', type: 'Structural weakness', target: 'RSA',
-    title: 'Deterministic textbook RSA', risk: 88,
-    summary: 'Raw RSA is deterministic: repeated messages produce identical ciphertexts; algebraic attacks become feasible.',
-    experiment: 'Encrypt the same message twice with the same public key using textbook RSA and compare the identical outputs.',
-    why: 'Without randomized padding (e.g. OAEP), RSA preserves too much structure and is not semantically secure.',
-    fix: 'Always use randomized padding schemes such as OAEP. Never deploy textbook RSA directly.',
-    observations: ['Same message → same ciphertext every time', 'No chosen-ciphertext attack resilience', 'Padding is part of the cryptosystem, not an optional wrapper']
-  },
-  {
-    id: 'nonce-reuse', name: 'Nonce reuse (AEAD)', type: 'Operational failure', target: 'AEAD',
-    title: 'Nonce reuse catastrophe', risk: 95,
-    summary: 'Reusing a nonce with the same key in stream-like AE can reveal relations between plaintexts and destroy authenticity.',
-    experiment: 'Encrypt two messages with the same nonce and key. XOR the ciphertexts to recover the XOR of the plaintexts directly.',
-    why: 'Many AEAD constructions derive the same keystream on nonce+key repetition, so the masks cancel under XOR.',
-    fix: 'Guarantee nonce uniqueness per key, or use misuse-resistant AEAD designs (e.g. AES-SIV).',
-    observations: ['C₁ ⊕ C₂ = P₁ ⊕ P₂ — plaintext structure leaks directly', 'Operational mistakes can defeat strong primitives', 'Nonce management is a system-level engineering responsibility']
-  },
-  {
-    id: 'reused-k', name: 'Reused ephemeral k', type: 'Ephemeral key failure', target: 'ElGamal / DSA',
-    title: 'Reused k exposes private key', risk: 93,
-    summary: 'Two signatures or ciphertexts with the same k expose private-key information through simple algebra.',
-    experiment: 'Write the two equations produced with the same k and solve the linear system for the private key modularly.',
-    why: 'Randomness is embedded in the private computation; reusing it reduces hidden unknowns and makes the system solvable.',
-    fix: 'Use high-quality randomness or RFC 6979 deterministic nonce generation for signatures.',
-    observations: ['One repeated k can directly reveal the private key', 'Implementation mistakes defeat mathematically sound schemes', 'Randomness quality is a core security requirement']
-  }
+  { id: 'ecb', name: 'ECB leakage', type: 'Chosen-plaintext', target: 'ECB', title: 'ECB pattern leakage', risk: 84, summary: 'Equal plaintext blocks → equal ciphertext blocks; file structure survives encryption.', experiment: 'Encrypt a bitmap with repeated 16-byte blocks under ECB. Large uniform regions map to repeated ciphertext blocks and the image outline remains visible.', why: 'ECB lacks semantic security: it deterministically maps each equal block to the same ciphertext, preserving visible structure.', fix: 'Use randomized or nonce-based modes (CBC + MAC, or preferably GCM / ChaCha20-Poly1305).', observations: ['Repeated input block → repeated ciphertext block', 'No diffusion across block boundaries', 'Image or file structure remains recognizable after encryption'] },
+  { id: 'des-brute', name: 'DES brute force', type: 'Exhaustive search', target: 'DES', title: '56-bit key exhaustive search', risk: 91, summary: 'DES has a 56-bit effective key — far too small against modern hardware.', experiment: 'Estimate the effort for 2⁵⁶ key candidates and compare against dedicated FPGA arrays or distributed search systems.', why: 'Security margins decay with hardware growth; what cost millions in 1977 is now trivially achievable.', fix: 'Use modern ciphers with at least 128-bit keys, e.g. AES-128 or AES-256.', observations: ['2⁵⁶ ≈ 7.2 × 10¹⁶ keys — broken in hours with specialized hardware', '56-bit keys are no longer future-proof', 'Legacy protocol support is not a security argument'] },
+  { id: 'cbc-flip', name: 'CBC bit flipping', type: 'Ciphertext manipulation', target: 'CBC', title: 'CBC malleability without MAC', risk: 79, summary: 'Without integrity protection, attackers flip targeted plaintext bits by modifying ciphertext.', experiment: 'Flip a chosen bit in ciphertext block Cᵢ and inspect how plaintext block Pᵢ₊₁ changes after decryption.', why: 'CBC decryption XORs the previous ciphertext block into the next plaintext block, enabling controlled corruption.', fix: 'Authenticate ciphertexts with a MAC (Encrypt-then-MAC) or use AEAD.', observations: ['Controlled bit flips in the following decrypted block', 'Tampering survives if no integrity check exists', 'Padding oracles can amplify the attack further'] },
+  { id: 'textbook-rsa', name: 'Textbook RSA', type: 'Structural weakness', target: 'RSA', title: 'Deterministic textbook RSA', risk: 88, summary: 'Raw RSA is deterministic: repeated messages produce identical ciphertexts; algebraic attacks become feasible.', experiment: 'Encrypt the same message twice with the same public key using textbook RSA and compare the identical outputs.', why: 'Without randomized padding (e.g. OAEP), RSA preserves too much structure and is not semantically secure.', fix: 'Always use randomized padding schemes such as OAEP. Never deploy textbook RSA directly.', observations: ['Same message → same ciphertext every time', 'No chosen-ciphertext attack resilience', 'Padding is part of the cryptosystem, not an optional wrapper'] },
+  { id: 'nonce-reuse', name: 'Nonce reuse (AEAD)', type: 'Operational failure', target: 'AEAD', title: 'Nonce reuse catastrophe', risk: 95, summary: 'Reusing a nonce with the same key in stream-like AE can reveal relations between plaintexts and destroy authenticity.', experiment: 'Encrypt two messages with the same nonce and key. XOR the ciphertexts to recover the XOR of the plaintexts directly.', why: 'Many AEAD constructions derive the same keystream on nonce+key repetition, so the masks cancel under XOR.', fix: 'Guarantee nonce uniqueness per key, or use misuse-resistant AEAD designs (e.g. AES-SIV).', observations: ['C₁ ⊕ C₂ = P₁ ⊕ P₂ — plaintext structure leaks directly', 'Operational mistakes can defeat strong primitives', 'Nonce management is a system-level engineering responsibility'] },
+  { id: 'reused-k', name: 'Reused ephemeral k', type: 'Ephemeral key failure', target: 'ElGamal / DSA', title: 'Reused k exposes private key', risk: 93, summary: 'Two signatures or ciphertexts with the same k expose private-key information through simple algebra.', experiment: 'Write the two equations produced with the same k and solve the linear system for the private key modularly.', why: 'Randomness is embedded in the private computation; reusing it reduces hidden unknowns and makes the system solvable.', fix: 'Use high-quality randomness or RFC 6979 deterministic nonce generation for signatures.', observations: ['One repeated k can directly reveal the private key', 'Implementation mistakes defeat mathematically sound schemes', 'Randomness quality is a core security requirement'] }
 ];
 
 const EXAMPLES = [
-  {
-    id: 'rsa-toy', topic: 'RSA', title: 'RSA toy example',
-    summary: 'Small modulus makes the arithmetic fully inspectable while preserving all structural properties.',
-    steps: [
-      'Choose p=61 and q=53 → n = 3233, φ(n) = (61-1)(53-1) = 3120.',
-      'Pick e=17 with gcd(17, 3120) = 1.',
-      'Compute d=2753 so that 17 · 2753 ≡ 1 mod 3120.',
-      'Encrypt m=42: c = 42¹⁷ mod 3233 = 2557.',
-      'Decrypt: 2557²⁷⁵³ mod 3233 = 42. ✓'
-    ],
-    takeaway: 'Good exam answers connect the arithmetic to the trapdoor: encryption uses the public exponent; decryption relies on the modular inverse tied to φ(n).',
-    mistake: 'Students often confuse n with φ(n) when computing d.'
-  },
-  {
-    id: 'dh-small', topic: 'Diffie-Hellman', title: 'Small-prime DH exchange',
-    summary: 'A tiny group is insecure in practice but ideal for rehearsing shared-secret derivation by hand.',
-    steps: [
-      'Public parameters: p=23, g=5.',
-      'Alice picks a=6, publishes A = 5⁶ mod 23 = 8.',
-      'Bob picks b=15, publishes B = 5¹⁵ mod 23 = 19.',
-      'Alice: 19⁶ mod 23 = 2.   Bob: 8¹⁵ mod 23 = 2.   Same secret ✓'
-    ],
-    takeaway: 'The secret is never transmitted; only exponentiated public values travel over the channel.',
-    mistake: 'Students sometimes multiply A and B instead of exponentiating with their own private exponent.'
-  },
-  {
-    id: 'aes-round', topic: 'AES', title: 'AES round intuition',
-    summary: 'Isolating one round lets students focus on each transformation in turn.',
-    steps: [
-      'Load plaintext bytes into the 4×4 AES state matrix.',
-      'XOR the round key byte-by-byte in AddRoundKey.',
-      'Apply the S-box to each byte in SubBytes (nonlinearity).',
-      'Rotate rows in ShiftRows (positional mixing).',
-      'Mix each column via GF(2⁸) in MixColumns (diffusion).'
-    ],
-    takeaway: 'Separate nonlinearity from diffusion: SubBytes creates confusion; MixColumns amplifies diffusion.',
-    mistake: 'ShiftRows changes positions, not values — a very common exam error.'
-  },
-  {
-    id: 'mac-compare', topic: 'MAC', title: 'Hash vs HMAC',
-    summary: 'Placing plain hashing next to HMAC makes the authentication gap impossible to miss.',
-    steps: [
-      'Compute H(m) for a public message — anyone can reproduce this.',
-      'Note: no key, no authenticity. Anyone can forge a "matching" digest.',
-      'Introduce secret K and compute HMAC(K, m) = H(K ⊕ opad ∥ H(K ⊕ ipad ∥ m)).',
-      'Only holders of K can generate or verify a valid tag.'
-    ],
-    takeaway: 'A hash gives fingerprinting; a MAC gives keyed integrity.',
-    mistake: 'Writing "hashing provides authentication" without mentioning the secret key.'
-  },
-  {
-    id: 'ecb-demo', topic: 'Attack', title: 'ECB image thought experiment',
-    summary: 'A powerful exam-ready reasoning pattern — no implementation required.',
-    steps: [
-      'Split a structured image into repeated 16-byte plaintext blocks.',
-      'Encrypt each block independently under ECB mode.',
-      'Identical input blocks produce identical output blocks.',
-      'The encrypted image still reveals the original outline — confidentiality fails.'
-    ],
-    takeaway: 'Confidentiality must hide patterns, not just individual values.',
-    mistake: 'Claiming ECB is secure because the underlying block cipher (AES, DES) is strong.'
-  },
-  {
-    id: 'ecc-shared', topic: 'ECC', title: 'ECDH conceptual flow',
-    summary: 'Symbolic points teach the exchange clearly before introducing heavy curve arithmetic.',
-    steps: [
-      'Agree on curve parameters and base point G.',
-      'Alice publishes A = aG; Bob publishes B = bG.',
-      'Alice computes aB = a(bG); Bob computes bA = b(aG).',
-      'Both obtain abG — the shared secret point. ✓'
-    ],
-    takeaway: 'ECC preserves the Diffie-Hellman logic with shorter keys for comparable security.',
-    mistake: 'Thinking the public-key points A or B are themselves the shared secret.'
-  }
+  { id: 'rsa-toy', topic: 'RSA', title: 'RSA toy example', summary: 'Small modulus makes the arithmetic fully inspectable while preserving all structural properties.', steps: ['Choose p=61 and q=53 → n = 3233, φ(n) = (61-1)(53-1) = 3120.', 'Pick e=17 with gcd(17, 3120) = 1.', 'Compute d=2753 so that 17 · 2753 ≡ 1 mod 3120.', 'Encrypt m=42: c = 42¹⁷ mod 3233 = 2557.', 'Decrypt: 2557²⁷⁵³ mod 3233 = 42. ✓'], takeaway: 'Good exam answers connect the arithmetic to the trapdoor: encryption uses the public exponent; decryption relies on the modular inverse tied to φ(n).', mistake: 'Students often confuse n with φ(n) when computing d.' },
+  { id: 'dh-small', topic: 'Diffie-Hellman', title: 'Small-prime DH exchange', summary: 'A tiny group is insecure in practice but ideal for rehearsing shared-secret derivation by hand.', steps: ['Public parameters: p=23, g=5.', 'Alice picks a=6, publishes A = 5⁶ mod 23 = 8.', 'Bob picks b=15, publishes B = 5¹⁵ mod 23 = 19.', 'Alice: 19⁶ mod 23 = 2.   Bob: 8¹⁵ mod 23 = 2.   Same secret ✓'], takeaway: 'The secret is never transmitted; only exponentiated public values travel over the channel.', mistake: 'Students sometimes multiply A and B instead of exponentiating with their own private exponent.' },
+  { id: 'aes-round', topic: 'AES', title: 'AES round intuition', summary: 'Isolating one round lets students focus on each transformation in turn.', steps: ['Load plaintext bytes into the 4×4 AES state matrix.', 'XOR the round key byte-by-byte in AddRoundKey.', 'Apply the S-box to each byte in SubBytes (nonlinearity).', 'Rotate rows in ShiftRows (positional mixing).', 'Mix each column via GF(2⁸) in MixColumns (diffusion).'], takeaway: 'Separate nonlinearity from diffusion: SubBytes creates confusion; MixColumns amplifies diffusion.', mistake: 'ShiftRows changes positions, not values — a very common exam error.' },
+  { id: 'mac-compare', topic: 'MAC', title: 'Hash vs HMAC', summary: 'Placing plain hashing next to HMAC makes the authentication gap impossible to miss.', steps: ['Compute H(m) for a public message — anyone can reproduce this.', 'Note: no key, no authenticity. Anyone can forge a "matching" digest.', 'Introduce secret K and compute HMAC(K, m) = H(K ⊕ opad ∥ H(K ⊕ ipad ∥ m)).', 'Only holders of K can generate or verify a valid tag.'], takeaway: 'A hash gives fingerprinting; a MAC gives keyed integrity.', mistake: 'Writing "hashing provides authentication" without mentioning the secret key.' },
+  { id: 'ecb-demo', topic: 'Attack', title: 'ECB image thought experiment', summary: 'A powerful exam-ready reasoning pattern — no implementation required.', steps: ['Split a structured image into repeated 16-byte plaintext blocks.', 'Encrypt each block independently under ECB mode.', 'Identical input blocks produce identical output blocks.', 'The encrypted image still reveals the original outline — confidentiality fails.'], takeaway: 'Confidentiality must hide patterns, not just individual values.', mistake: 'Claiming ECB is secure because the underlying block cipher (AES, DES) is strong.' },
+  { id: 'ecc-shared', topic: 'ECC', title: 'ECDH conceptual flow', summary: 'Symbolic points teach the exchange clearly before introducing heavy curve arithmetic.', steps: ['Agree on curve parameters and base point G.', 'Alice publishes A = aG; Bob publishes B = bG.', 'Alice computes aB = a(bG); Bob computes bA = b(aG).', 'Both obtain abG — the shared secret point. ✓'], takeaway: 'ECC preserves the Diffie-Hellman logic with shorter keys for comparable security.', mistake: 'Thinking the public-key points A or B are themselves the shared secret.' }
 ];
 
 const QUIZ = [
@@ -301,10 +185,9 @@ const TEACHER = [
   { title: 'AEAD', summary: 'Use AEAD to show that confidentiality and integrity should be designed together, not bolted on.', analogy: 'Not just a locked box — a locked and tamper-evident box where breaking the seal is immediately obvious.', warning: 'Nonce reuse must be framed as a system-level engineering failure, not a minor detail.' }
 ];
 
-// ── Crypto engine (real computation, used by Exercise mode & worked examples) ─
+// ── Crypto engine ────────────────────────────────────────────────────────────
 function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; }
 
-// Extended Euclidean Algorithm with full step trace (exam-style table).
 function extendedGCD(a, b) {
   let old_r = a, r = b, old_x = 1, x = 0, old_y = 0, y = 1;
   const table = [];
@@ -319,7 +202,6 @@ function extendedGCD(a, b) {
   return { gcd: old_r, x: old_x, y: old_y, table };
 }
 
-// Fast modular exponentiation (square-and-multiply).
 function modpow(base, exp, mod) {
   if (mod === 1) return 0;
   base = ((base % mod) + mod) % mod;
@@ -332,7 +214,12 @@ function modpow(base, exp, mod) {
   return result;
 }
 
-// Full RSA pipeline computed for real from p, q, e, m.
+function isPrime(n) {
+  if (n < 2) return false;
+  for (let i = 2; i <= Math.sqrt(n); i++) if (n % i === 0) return false;
+  return true;
+}
+
 function computeRSA(p, q, e, m) {
   const n = p * q;
   const phi = (p - 1) * (q - 1);
@@ -344,7 +231,6 @@ function computeRSA(p, q, e, m) {
   return { p, q, e, m, n, phi, d, c, decrypted, eg };
 }
 
-// Full Diffie-Hellman exchange computed for real from p, g, a, b.
 function computeDH(p, g, a, b) {
   const A = modpow(g, a, p);
   const B = modpow(g, b, p);
@@ -353,81 +239,182 @@ function computeDH(p, g, a, b) {
   return { p, g, a, b, A, B, kAlice, kBob, match: kAlice === kBob };
 }
 
-// ── Exercise mode data ──────────────────────────────────────────────────────
+// ── Small prime pools for random parameter generation ─────────────────────
+const SMALL_PRIMES = [11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71];
+const SMALL_SAFE_PRIMES = [11,23,47,59,83,107,167,179,227,239,251,263,347,359,383,467];
+
+function randItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+// Generate fresh random RSA parameters (small, exam-friendly).
+function randomRSAParams() {
+  let p, q, phi, e, m;
+  do {
+    p = randItem(SMALL_PRIMES);
+    q = randItem(SMALL_PRIMES);
+  } while (p === q || p * q < 20);
+  phi = (p - 1) * (q - 1);
+  const candidates = [3, 5, 7, 11, 13, 17, 19, 23].filter(x => x < phi && gcd(x, phi) === 1);
+  e = randItem(candidates) || 3;
+  const n = p * q;
+  m = randInt(2, Math.min(n - 1, 50));
+  return { p, q, e, m };
+}
+
+// Generate fresh random DH parameters.
+function randomDHParams() {
+  const p = randItem(SMALL_SAFE_PRIMES);
+  const g = randInt(2, Math.min(p - 2, 10));
+  const a = randInt(2, p - 2);
+  const b = randInt(2, p - 2);
+  return { p, g, a, b };
+}
+
+// ── Exercise definitions (dynamic, step-by-step) ──────────────────────────
+// Each exercise has:
+//   params: array of { id, label, default }
+//   generateRandom(): returns fresh params object
+//   buildSteps(params): returns array of step objects { label, fieldId, hint, compute(params, prev) }
+//   run(params): returns full result object
+
 const EXERCISES = {
   rsa: {
     title: 'RSA — genera le chiavi e cifra/decifra',
-    goal: 'Dati p, q ed e, calcola n, φ(n), l\u2019esponente privato d (con l\u2019algoritmo esteso di Euclide), il cifrato c e il messaggio decifrato.',
+    goal: 'Dati p, q ed e, calcola passo per passo: n, φ(n), gcd(e,φ(n)), d (con EEA), il cifrato c e il messaggio decifrato.',
     params: [
       { id: 'p', label: 'p (primo)', default: 61 },
       { id: 'q', label: 'q (primo)', default: 53 },
       { id: 'e', label: 'e (esponente pubblico)', default: 17 },
       { id: 'm', label: 'm (messaggio, m < n)', default: 42 }
     ],
-    fields: [
-      { id: 'n', label: 'n = p · q' },
-      { id: 'phi', label: 'φ(n) = (p−1)(q−1)' },
-      { id: 'd', label: 'd, tale che e·d ≡ 1 (mod φ(n))' },
-      { id: 'c', label: 'c = mᵉ mod n' },
-      { id: 'decrypted', label: 'm = cᵈ mod n (verifica)' }
-    ],
-    run: (p) => computeRSA(+p.p, +p.q, +p.e, +p.m),
-    trace: (r) => {
-      if (r.error) return [`<strong>Errore:</strong> ${r.error}`];
-      const steps = [
-        `n = p·q = ${r.p}·${r.q} = <strong>${r.n}</strong>`,
-        `φ(n) = (p−1)(q−1) = ${r.p - 1}·${r.q - 1} = <strong>${r.phi}</strong>`,
-        `Algoritmo esteso di Euclide su (e, φ(n)) = (${r.e}, ${r.phi}):`,
-        ...r.eg.table.map(t => `&emsp;${t.eq}`),
-        `&emsp;gcd = ${r.eg.gcd}, coefficiente di Bézout x = ${r.eg.x} → d = x mod φ(n) = <strong>${r.d}</strong>`,
-        `Verifica: e·d mod φ(n) = ${r.e}·${r.d} mod ${r.phi} = ${(r.e * r.d) % r.phi}`,
-        `Cifratura: c = mᵉ mod n = ${r.m}^${r.e} mod ${r.n} = <strong>${r.c}</strong>`,
-        `Decifratura: m = cᵈ mod n = ${r.c}^${r.d} mod ${r.n} = <strong>${r.decrypted}</strong>`
+    generateRandom: randomRSAParams,
+    buildSteps(params) {
+      const p = +params.p, q = +params.q, e = +params.e, m = +params.m;
+      const n = p * q;
+      const phi = (p-1)*(q-1);
+      const g = gcd(e, phi);
+      const eg = extendedGCD(e, phi);
+      const d = ((eg.x % phi) + phi) % phi;
+      const c = modpow(m, e, n);
+      const dec = modpow(c, d, n);
+      return [
+        {
+          id: 'n',
+          label: 'Passo 1 — Calcola n = p · q',
+          hint: `Moltiplica i due primi: ${p} · ${q}`,
+          answer: String(n),
+          explanation: `n = ${p} · ${q} = <strong>${n}</strong> — il modulo RSA (chiave pubblica e privata condividono n).`
+        },
+        {
+          id: 'phi',
+          label: 'Passo 2 — Calcola φ(n) = (p−1)(q−1)',
+          hint: `(${p}−1) · (${q}−1) = ${p-1} · ${q-1}`,
+          answer: String(phi),
+          explanation: `φ(n) = (${p}−1)(${q}−1) = ${p-1}·${q-1} = <strong>${phi}</strong> — la funzione di Eulero, necessaria per trovare d.`
+        },
+        {
+          id: 'gcd_check',
+          label: `Passo 3 — Verifica gcd(e, φ(n)) = gcd(${e}, ${phi})`,
+          hint: 'Usa l\'algoritmo di Euclide. Il risultato deve essere 1 per garantire l\'esistenza dell\'inverso.',
+          answer: String(g),
+          explanation: `gcd(${e}, ${phi}) = <strong>${g}</strong>${g === 1 ? ' ✓ — e è invertibile mod φ(n).' : ' ✗ — scegli un e diverso!'}`
+        },
+        {
+          id: 'd',
+          label: `Passo 4 — Calcola d = e⁻¹ mod φ(n) con l'EEA`,
+          hint: `Algoritmo esteso di Euclide su (${e}, ${phi}). Cerca t tale che ${e}·t ≡ 1 (mod ${phi}).`,
+          answer: String(d),
+          explanation: [
+            `EEA su (${e}, ${phi}):`,
+            ...eg.table.map(t => `&emsp;${t.eq}`),
+            `Coefficiente di Bézout: x = ${eg.x} → d = (${eg.x} mod ${phi} + ${phi}) mod ${phi} = <strong>${d}</strong>`,
+            `Verifica: ${e}·${d} mod ${phi} = ${(e*d) % phi} ✓`
+          ].join('<br>')
+        },
+        {
+          id: 'c',
+          label: `Passo 5 — Cifra: c = m^e mod n = ${m}^${e} mod ${n}`,
+          hint: 'Usa l\'esponenziazione modulare (square-and-multiply).',
+          answer: String(c),
+          explanation: `c = ${m}^${e} mod ${n} = <strong>${c}</strong> — il messaggio cifrato.`
+        },
+        {
+          id: 'decrypted',
+          label: `Passo 6 — Decifra: m = c^d mod n = ${c}^${d} mod ${n}`,
+          hint: 'Applica di nuovo l\'esponenziazione modulare con l\'esponente privato d.',
+          answer: String(dec),
+          explanation: `m = ${c}^${d} mod ${n} = <strong>${dec}</strong> ${dec === m ? '✓ — corrisponde al messaggio originale!' : '✗ — errore nel calcolo.'}`
+        }
       ];
-      return steps;
-    }
+    },
+    run: (p) => computeRSA(+p.p, +p.q, +p.e, +p.m)
   },
   dh: {
     title: 'Diffie–Hellman — deriva il segreto condiviso',
-    goal: 'Dati p, g, a (segreto di Alice) e b (segreto di Bob), calcola A, B e il segreto condiviso K su entrambi i lati.',
+    goal: 'Dati p, g, a (segreto Alice) e b (segreto Bob), calcola passo per passo A, B e il segreto condiviso K da entrambi i lati.',
     params: [
       { id: 'p', label: 'p (primo)', default: 23 },
       { id: 'g', label: 'g (generatore)', default: 5 },
       { id: 'a', label: 'a (segreto Alice)', default: 6 },
       { id: 'b', label: 'b (segreto Bob)', default: 15 }
     ],
-    fields: [
-      { id: 'A', label: 'A = gᵃ mod p' },
-      { id: 'B', label: 'B = gᵇ mod p' },
-      { id: 'kAlice', label: 'K = Bᵃ mod p (calcolato da Alice)' },
-      { id: 'kBob', label: 'K = Aᵇ mod p (calcolato da Bob)' }
-    ],
-    run: (p) => computeDH(+p.p, +p.g, +p.a, +p.b),
-    trace: (r) => [
-      `A = gᵃ mod p = ${r.g}^${r.a} mod ${r.p} = <strong>${r.A}</strong>`,
-      `B = gᵇ mod p = ${r.g}^${r.b} mod ${r.p} = <strong>${r.B}</strong>`,
-      `Alice calcola: K = Bᵃ mod p = ${r.B}^${r.a} mod ${r.p} = <strong>${r.kAlice}</strong>`,
-      `Bob calcola: K = Aᵇ mod p = ${r.A}^${r.b} mod ${r.p} = <strong>${r.kBob}</strong>`,
-      r.match ? `I due segreti coincidono: K = <strong>${r.kAlice}</strong> ✓` : `Attenzione: i segreti non coincidono, controlla i parametri.`
-    ]
+    generateRandom: randomDHParams,
+    buildSteps(params) {
+      const p = +params.p, g = +params.g, a = +params.a, b = +params.b;
+      const A = modpow(g, a, p);
+      const B = modpow(g, b, p);
+      const kAlice = modpow(B, a, p);
+      const kBob = modpow(A, b, p);
+      return [
+        {
+          id: 'A',
+          label: `Passo 1 — Alice pubblica A = g^a mod p = ${g}^${a} mod ${p}`,
+          hint: `Calcola ${g}^${a} mod ${p} con esponenziazione modulare.`,
+          answer: String(A),
+          explanation: `A = ${g}^${a} mod ${p} = <strong>${A}</strong> — il valore pubblico di Alice.`
+        },
+        {
+          id: 'B',
+          label: `Passo 2 — Bob pubblica B = g^b mod p = ${g}^${b} mod ${p}`,
+          hint: `Calcola ${g}^${b} mod ${p} con esponenziazione modulare.`,
+          answer: String(B),
+          explanation: `B = ${g}^${b} mod ${p} = <strong>${B}</strong> — il valore pubblico di Bob.`
+        },
+        {
+          id: 'kAlice',
+          label: `Passo 3 — Alice calcola K = B^a mod p = ${B}^${a} mod ${p}`,
+          hint: `Alice conosce B (pubblico) e a (suo segreto). Calcola ${B}^${a} mod ${p}.`,
+          answer: String(kAlice),
+          explanation: `K_Alice = ${B}^${a} mod ${p} = <strong>${kAlice}</strong>.`
+        },
+        {
+          id: 'kBob',
+          label: `Passo 4 — Bob calcola K = A^b mod p = ${A}^${b} mod ${p}`,
+          hint: `Bob conosce A (pubblico) e b (suo segreto). Calcola ${A}^${b} mod ${p}.`,
+          answer: String(kBob),
+          explanation: `K_Bob = ${A}^${b} mod ${p} = <strong>${kBob}</strong>${kAlice === kBob ? ' ✓ — i segreti coincidono!' : ' ✗ — errore.'}`
+        }
+      ];
+    },
+    run: (p) => computeDH(+p.p, +p.g, +p.a, +p.b)
   }
 };
 
-// ── Exam sheet / cheat-sheet data ───────────────────────────────────────────
+// ── Exam sheet ───────────────────────────────────────────────────────────────
 const EXAM_SHEET = [
-  { id: 'aes', name: 'AES', confidentiality: 'Sì (in una modalità adeguata)', integrity: 'No da sola', authentication: 'No', nonRepudiation: 'No', use: 'Cifratura simmetrica di dati a riposo e in transito (es. TLS con AES-GCM, dischi cifrati).', threat: 'ECB rivela pattern del plaintext; riuso di IV/nonce in CBC/CTR.', secure: 'Usare AES-GCM o AES-CTR+HMAC; mai ECB per dati strutturati.' },
-  { id: 'des', name: 'DES', confidentiality: 'Debole (chiave da 56 bit)', integrity: 'No', authentication: 'No', nonRepudiation: 'No', use: 'Solo storico/didattico; 3DES ancora in legacy systems.', threat: 'Ricerca esaustiva della chiave in tempi pratici con hardware dedicato.', secure: 'Migrare ad AES-128/256; evitare DES/3DES in nuovi sistemi.' },
-  { id: 'rsa', name: 'RSA', confidentiality: 'Sì (con OAEP)', integrity: 'No da sola', authentication: 'Sì se usata per firma', nonRepudiation: 'Sì (firma RSA)', use: 'Trasporto di chiavi, firme digitali (RSA-PSS), certificati X.509.', threat: 'Textbook RSA è deterministica; chiavi corte fattorizzabili.', secure: 'OAEP per la cifratura, PSS per la firma, n ≥ 2048 bit.' },
-  { id: 'dh', name: 'Diffie-Hellman', confidentiality: 'No (serve poi cifrare col segreto derivato)', integrity: 'No', authentication: 'No (vulnerabile a MITM)', nonRepudiation: 'No', use: 'Key exchange per stabilire un segreto condiviso (TLS, IPsec).', threat: 'Man-in-the-middle se i valori pubblici non sono autenticati.', secure: 'Autenticare lo scambio (firme/certificati) o usare protocolli come TLS/STS.' },
-  { id: 'elgamal', name: 'ElGamal', confidentiality: 'Sì (randomizzata)', integrity: 'No', authentication: 'No', nonRepudiation: 'No', use: 'Cifratura a chiave pubblica; base concettuale per DSA.', threat: 'Riuso del valore effimero k espone la chiave privata.', secure: 'k casuale e mai riutilizzato per ogni cifratura.' },
-  { id: 'hash', name: 'Hash functions', confidentiality: 'No', integrity: 'Sì (fingerprint, non contro un attaccante attivo senza chiave)', authentication: 'No', nonRepudiation: 'No', use: 'Verifica di integrità, commitment, base per HMAC e firme.', threat: 'Collisioni su algoritmi deboli (MD5, SHA-1).', secure: 'Usare SHA-256/SHA-3 o famiglie moderne.' },
-  { id: 'mac', name: 'MAC / HMAC / CMAC', confidentiality: 'No', integrity: 'Sì', authentication: 'Sì (con chiave condivisa)', nonRepudiation: 'No', use: 'Autenticazione di messaggi in protocolli simmetrici.', threat: 'Length-extension su costruzioni hash "naive" (chiave||messaggio) senza HMAC.', secure: 'Usare la costruzione HMAC standard o CMAC su cifrario a blocco.' },
-  { id: 'ae', name: 'Authenticated Encryption', confidentiality: 'Sì', integrity: 'Sì', authentication: 'Sì', nonRepudiation: 'No', use: 'Protocolli moderni: TLS 1.3 (AES-GCM, ChaCha20-Poly1305).', threat: 'Riuso del nonce; decifrare prima di verificare il tag (oracle).', secure: 'Nonce univoco per chiave; verificare il tag prima di rilasciare il plaintext.' },
+  { id: 'aes', name: 'AES', confidentiality: 'Sì (in modalità adeguata)', integrity: 'No da sola', authentication: 'No', nonRepudiation: 'No', use: 'Cifratura simmetrica di dati a riposo e in transito (TLS con AES-GCM, dischi cifrati).', threat: 'ECB rivela pattern del plaintext; riuso di IV/nonce in CBC/CTR.', secure: 'AES-GCM o AES-CTR+HMAC; mai ECB per dati strutturati.' },
+  { id: 'des', name: 'DES', confidentiality: 'Debole (56 bit)', integrity: 'No', authentication: 'No', nonRepudiation: 'No', use: 'Solo storico/didattico.', threat: 'Ricerca esaustiva della chiave in ore con hardware dedicato.', secure: 'Migrare ad AES-128/256.' },
+  { id: 'rsa', name: 'RSA', confidentiality: 'Sì (con OAEP)', integrity: 'No da sola', authentication: 'Sì (firma)', nonRepudiation: 'Sì (firma RSA)', use: 'Trasporto chiavi, firme digitali (RSA-PSS), certificati X.509.', threat: 'Textbook RSA deterministica; chiavi corte fattorizzabili.', secure: 'OAEP per cifratura, PSS per firma, n ≥ 2048 bit.' },
+  { id: 'dh', name: 'Diffie-Hellman', confidentiality: 'No (serve cifrare col segreto derivato)', integrity: 'No', authentication: 'No (vulnerabile MITM)', nonRepudiation: 'No', use: 'Key exchange per segreto condiviso (TLS, IPsec).', threat: 'Man-in-the-middle se i valori pubblici non sono autenticati.', secure: 'Autenticare lo scambio (firme/certificati) o usare TLS/STS.' },
+  { id: 'elgamal', name: 'ElGamal', confidentiality: 'Sì (randomizzata)', integrity: 'No', authentication: 'No', nonRepudiation: 'No', use: 'Cifratura a chiave pubblica; base per DSA.', threat: 'Riuso del valore effimero k espone la chiave privata.', secure: 'k casuale univoco per ogni cifratura.' },
+  { id: 'hash', name: 'Hash functions', confidentiality: 'No', integrity: 'Sì (fingerprint)', authentication: 'No', nonRepudiation: 'No', use: 'Verifica integrità, commitment, base per HMAC e firme.', threat: 'Collisioni su algoritmi deboli (MD5, SHA-1).', secure: 'SHA-256/SHA-3 o famiglie moderne.' },
+  { id: 'mac', name: 'MAC / HMAC / CMAC', confidentiality: 'No', integrity: 'Sì', authentication: 'Sì (con chiave condivisa)', nonRepudiation: 'No', use: 'Autenticazione messaggi in protocolli simmetrici.', threat: 'Length-extension su costruzioni naive senza HMAC.', secure: 'Costruzione HMAC standard o CMAC su cifrario a blocco.' },
+  { id: 'ae', name: 'Authenticated Encryption', confidentiality: 'Sì', integrity: 'Sì', authentication: 'Sì', nonRepudiation: 'No', use: 'TLS 1.3 (AES-GCM, ChaCha20-Poly1305).', threat: 'Riuso del nonce; decifrare prima di verificare il tag.', secure: 'Nonce univoco per chiave; verificare il tag prima di rilasciare il plaintext.' },
   { id: 'ecc', name: 'ECC / ECDH', confidentiality: 'Sì (ECIES)', integrity: 'No da sola', authentication: 'Sì (ECDSA/EdDSA)', nonRepudiation: 'Sì (ECDSA/EdDSA)', use: 'TLS moderno, firme, scambio chiavi su dispositivi con risorse limitate.', threat: 'Curve non standard o deboli; RNG scarsa nelle firme.', secure: 'Curve standard (P-256, Curve25519); nonce deterministico (RFC 6979) o EdDSA.' }
 ];
 
-// ── Persistence (localStorage) ──────────────────────────────────────────────
-const STORAGE_KEY = 'cav_state_v1';
+// ── localStorage persistence ─────────────────────────────────────────────────
+const STORAGE_KEY = 'cav_state_v2';
 function saveState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -437,33 +424,30 @@ function saveState() {
       quizIndex: S.quizIndex,
       quizCategory: S.quizCategory
     }));
-  } catch (err) { /* localStorage unavailable — ignore */ }
+  } catch (err) {}
 }
 function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch (err) { return null; }
+  try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch (err) { return null; }
 }
 
-// ── State ────────────────────────────────────────────────────────────────────
+// ── App state ────────────────────────────────────────────────────────────────
 const S = {
-  currentAlgo: 0,
-  currentStep: 0,
-  currentAttack: 0,
-  currentExample: 0,
-  mode: 'student',
-  exerciseMode: false,
-  quizIndex: 0,
-  quizAnswers: Array(QUIZ.length).fill(null),
-  quizCategory: 'All',
-  quizTimes: Array(QUIZ.length).fill(0),
-  quizQuestionStart: Date.now(),
-  quizSessionStart: Date.now()
+  currentAlgo: 0, currentStep: 0, currentAttack: 0, currentExample: 0,
+  mode: 'student', exerciseMode: false,
+  quizIndex: 0, quizAnswers: Array(QUIZ.length).fill(null),
+  quizCategory: 'All', quizTimes: Array(QUIZ.length).fill(0),
+  quizQuestionStart: Date.now(), quizSessionStart: Date.now(),
+  // exercise state
+  exerciseParamsAlgo: null,
+  exerciseParams: {},
+  exerciseStepIndex: 0,  // current step the student is on
+  exerciseSteps: [],     // built steps array for current params
+  exerciseAnswers: {},   // { stepId: userInput }
+  exerciseRevealed: {},  // { stepId: true } — steps already checked
 };
 
-// ── Render helpers ───────────────────────────────────────────────────────────
+// ── Render helpers ────────────────────────────────────────────────────────────
 function renderLists() {
   document.getElementById('algoList').innerHTML = ALGORITHMS.map((a, i) =>
     `<button class="algo-btn ${i === S.currentAlgo ? 'active' : ''}" data-ai="${i}"><span>${a.name}</span><span>›</span></button>`
@@ -475,8 +459,7 @@ function renderLists() {
     `<button class="example-btn ${i === S.currentExample ? 'active' : ''}" data-ex="${i}"><span>${a.title}</span><span>›</span></button>`
   ).join('');
   document.getElementById('teacherGrid').innerHTML = TEACHER.map(t =>
-    `<article class="teacher-panel">
-      <h4>${t.title}</h4>
+    `<article class="teacher-panel"><h4>${t.title}</h4>
       <p style="color:var(--color-text-muted);font-size:var(--text-sm)">${t.summary}</p>
       <div class="callout" style="margin-top:.75rem;font-size:var(--text-sm)"><strong>Analogy:</strong> ${t.analogy}</div>
       <div class="card" style="margin-top:.75rem"><h4>Exam warning</h4><p style="font-size:var(--text-sm)">${t.warning}</p></div>
@@ -540,6 +523,42 @@ function renderExample() {
   document.getElementById('exampleMistake').textContent = e.mistake;
 }
 
+// ── Exercise render (dynamic + step-by-step) ─────────────────────────────────
+function initExerciseState(algoId) {
+  const ex = EXERCISES[algoId];
+  if (!ex) return;
+  S.exerciseParamsAlgo = algoId;
+  if (!S.exerciseParams[algoId]) {
+    S.exerciseParams[algoId] = {};
+    ex.params.forEach(p => { S.exerciseParams[algoId][p.id] = p.default; });
+  }
+  S.exerciseSteps = ex.buildSteps(S.exerciseParams[algoId]);
+  S.exerciseStepIndex = 0;
+  S.exerciseAnswers[algoId] = S.exerciseAnswers[algoId] || {};
+  S.exerciseRevealed[algoId] = S.exerciseRevealed[algoId] || {};
+}
+
+function resetExerciseProgress() {
+  const algoId = ALGORITHMS[S.currentAlgo].id;
+  S.exerciseAnswers[algoId] = {};
+  S.exerciseRevealed[algoId] = {};
+  S.exerciseStepIndex = 0;
+  const ex = EXERCISES[algoId];
+  if (ex) S.exerciseSteps = ex.buildSteps(S.exerciseParams[algoId]);
+}
+
+function randomizeExerciseParams() {
+  const algoId = ALGORITHMS[S.currentAlgo].id;
+  const ex = EXERCISES[algoId];
+  if (!ex || !ex.generateRandom) return;
+  S.exerciseParams[algoId] = ex.generateRandom();
+  S.exerciseSteps = ex.buildSteps(S.exerciseParams[algoId]);
+  S.exerciseAnswers[algoId] = {};
+  S.exerciseRevealed[algoId] = {};
+  S.exerciseStepIndex = 0;
+  renderExercise();
+}
+
 function renderExercise() {
   const panel = document.getElementById('exercisePanel');
   const normal = document.getElementById('normalPanel');
@@ -550,270 +569,25 @@ function renderExercise() {
   const ex = EXERCISES[algoId];
   const unsupported = document.getElementById('exerciseUnsupported');
   const body = document.getElementById('exerciseBody');
-  if (!ex) {
-    unsupported.style.display = '';
-    body.style.display = 'none';
-    return;
-  }
-  unsupported.style.display = 'none';
-  body.style.display = '';
+  if (!ex) { unsupported.style.display = ''; body.style.display = 'none'; return; }
+  unsupported.style.display = 'none'; body.style.display = '';
+
+  if (S.exerciseParamsAlgo !== algoId) initExerciseState(algoId);
+
+  const params = S.exerciseParams[algoId];
+  const answers = S.exerciseAnswers[algoId];
+  const revealed = S.exerciseRevealed[algoId];
+  const steps = S.exerciseSteps;
 
   document.getElementById('exerciseTitle').textContent = ex.title;
   document.getElementById('exerciseGoal').textContent = ex.goal;
 
-  if (!S.exerciseParams || S.exerciseParamsAlgo !== algoId) {
-    S.exerciseParams = {};
-    ex.params.forEach(p => { S.exerciseParams[p.id] = p.default; });
-    S.exerciseParamsAlgo = algoId;
-    S.exerciseAnswers = {};
-    S.exerciseChecked = false;
-  }
-
+  // Params row
   document.getElementById('exerciseParams').innerHTML = ex.params.map(p =>
     `<div class="field"><label for="exparam-${p.id}">${p.label}</label>
-      <input class="mono" id="exparam-${p.id}" data-exparam="${p.id}" value="${S.exerciseParams[p.id]}" inputmode="numeric"/></div>`
+      <input class="mono" id="exparam-${p.id}" data-exparam="${p.id}" data-algoex="${algoId}" value="${params[p.id]}" inputmode="numeric"/></div>`
   ).join('');
 
-  document.getElementById('exerciseFields').innerHTML = ex.fields.map(f => {
-    const val = S.exerciseAnswers[f.id] ?? '';
-    let cls = 'field';
-    let feedback = '';
-    if (S.exerciseChecked && S.exerciseResult && !S.exerciseResult.error) {
-      const correctVal = String(S.exerciseResult[f.id]);
-      const ok = String(val).trim() === correctVal;
-      feedback = `<span class="badge ${ok ? 'success' : 'warn'}" style="margin-left:.5rem">${ok ? 'Corretto' : 'Da rivedere'}</span>`;
-    }
-    return `<div class="${cls}"><label for="exfield-${f.id}">${f.label} ${feedback}</label>
-      <input class="mono" id="exfield-${f.id}" data-exfield="${f.id}" value="${val}" placeholder="il tuo risultato"/></div>`;
-  }).join('');
-
-  const resultsEl = document.getElementById('exerciseResults');
-  if (S.exerciseChecked && S.exerciseResult) {
-    const r = S.exerciseResult;
-    const trace = ex.trace(r);
-    resultsEl.innerHTML = `<h4>Procedimento completo</h4><div class="timeline">${
-      trace.map((s, i) => `<div class="step"><strong>Passo ${i + 1}</strong><p style="font-size:var(--text-sm)">${s}</p></div>`).join('')
-    }</div>`;
-  } else {
-    resultsEl.innerHTML = '<p class="helper">Inserisci i tuoi valori e premi "Verifica" per vedere tutti i passaggi del procedimento corretto.</p>';
-  }
-}
-
-function renderExamSheet() {
-  document.getElementById('examSheetGrid').innerHTML = EXAM_SHEET.map(x => `
-    <article class="teacher-panel">
-      <h4>${x.name}</h4>
-      <div class="kpi-row" style="grid-template-columns:1fr 1fr;margin-top:.5rem">
-        <div class="kpi"><span>Confidenzialità</span><strong style="font-size:var(--text-sm)">${x.confidentiality}</strong></div>
-        <div class="kpi"><span>Integrità</span><strong style="font-size:var(--text-sm)">${x.integrity}</strong></div>
-        <div class="kpi"><span>Autenticazione</span><strong style="font-size:var(--text-sm)">${x.authentication}</strong></div>
-        <div class="kpi"><span>Non ripudio</span><strong style="font-size:var(--text-sm)">${x.nonRepudiation}</strong></div>
-      </div>
-      <div class="card" style="margin-top:.75rem"><h4>Uso tipico</h4><p style="font-size:var(--text-sm)">${x.use}</p></div>
-      <div class="card" style="margin-top:.75rem"><h4>Minaccia tipica</h4><p style="font-size:var(--text-sm)">${x.threat}</p></div>
-      <div class="callout" style="margin-top:.75rem;font-size:var(--text-sm)"><strong>Versione sicura:</strong> ${x.secure}</div>
-    </article>
-  `).join('');
-}
-
-function getFilteredQuizIndices() {
-  if (S.quizCategory === 'All') return QUIZ.map((_, i) => i);
-  return QUIZ.map((_, i) => i).filter(i => QUIZ[i].category === S.quizCategory);
-}
-
-function formatSeconds(s) {
-  const m = Math.floor(s / 60), r = s % 60;
-  return m > 0 ? `${m}m ${r}s` : `${r}s`;
-}
-
-function renderQuiz() {
-  const indices = getFilteredQuizIndices();
-  if (S.quizIndex >= indices.length) S.quizIndex = Math.max(0, indices.length - 1);
-  const realIdx = indices[S.quizIndex];
-  const q = QUIZ[realIdx];
-  const ans = S.quizAnswers[realIdx];
-
-  const catSelect = document.getElementById('quizCategoryFilter');
-  if (catSelect && catSelect.dataset.built !== '1') {
-    const cats = ['All', ...new Set(QUIZ.map(x => x.category))];
-    catSelect.innerHTML = cats.map(c => `<option value="${c}">${c === 'All' ? 'Tutte le categorie' : c}</option>`).join('');
-    catSelect.dataset.built = '1';
-  }
-  if (catSelect) catSelect.value = S.quizCategory;
-
-  document.getElementById('quizQuestionTitle').textContent = `Question ${S.quizIndex + 1} / ${indices.length}`;
-  document.getElementById('quizQuestionText').textContent = q.q;
-  document.getElementById('quizCategory').textContent = q.category;
-  document.getElementById('quizProgress').style.width = `${((S.quizIndex + 1) / indices.length) * 100}%`;
-  document.getElementById('quizOptions').innerHTML = q.opts.map((o, i) => {
-    let cls = 'quiz-option';
-    if (ans !== null) {
-      if (i === q.correct) cls += ' correct';
-      else if (i === ans) cls += ' wrong';
-    }
-    return `<button class="${cls}" data-opt="${i}">${String.fromCharCode(65 + i)}. ${o}</button>`;
-  }).join('');
-
-  const answered = S.quizAnswers.filter(v => v !== null).length;
-  const correct = S.quizAnswers.reduce((acc, v, i) => acc + (v === QUIZ[i].correct ? 1 : 0), 0);
-  document.getElementById('quizAnswered').textContent = answered;
-  document.getElementById('quizCorrect').textContent = correct;
-  document.getElementById('quizAccuracy').textContent = answered ? `${Math.round(correct / answered * 100)}%` : '0%';
-  document.getElementById('quizExplanation').innerHTML = ans === null
-    ? 'Select an answer to reveal the explanation.'
-    : `<strong>${ans === q.correct ? 'Correct ✓' : 'Review ✗'}</strong> ${q.ex}`;
-
-  const timerEl = document.getElementById('quizTimer');
-  if (timerEl) timerEl.textContent = formatSeconds(Math.floor((Date.now() - S.quizQuestionStart) / 1000));
-
-  const completionEl = document.getElementById('quizCompletionMsg');
-  const allAnswered = indices.every(i => S.quizAnswers[i] !== null);
-  if (allAnswered && completionEl) {
-    const byCat = {};
-    QUIZ.forEach((qq, i) => {
-      if (!indices.includes(i)) return;
-      byCat[qq.category] = byCat[qq.category] || { total: 0, correct: 0 };
-      byCat[qq.category].total++;
-      if (S.quizAnswers[i] === qq.correct) byCat[qq.category].correct++;
-    });
-    const weak = Object.entries(byCat).filter(([, v]) => v.correct / v.total < 0.7).map(([c]) => c);
-    const totalTime = Math.floor((Date.now() - S.quizSessionStart) / 1000);
-    completionEl.style.display = '';
-    completionEl.innerHTML = `<strong>Quiz completo ✓</strong> Tempo totale: ${formatSeconds(totalTime)}. ${
-      weak.length ? `Categorie da ripassare: <strong>${weak.join(', ')}</strong>.` : 'Ottimo lavoro su tutte le categorie!'
-    }`;
-  } else if (completionEl) {
-    completionEl.style.display = 'none';
-  }
-}
-
-function updateModeIndicator() {
-  const el = document.getElementById('modeIndicator');
-  if (!el) return;
-  const label = S.exerciseMode ? 'Exercise' : (S.mode === 'teacher' ? 'Teacher' : 'Student');
-  el.textContent = `Mode: ${label}`;
-}
-
-// ── Event delegation ─────────────────────────────────────────────────────────
-document.addEventListener('click', e => {
-  const ai = e.target.closest('[data-ai]');
-  if (ai) { S.currentAlgo = +ai.dataset.ai; S.currentStep = 0; renderLists(); renderAlgo(); renderExercise(); saveState(); }
-
-  const at = e.target.closest('[data-at]');
-  if (at) { S.currentAttack = +at.dataset.at; renderLists(); renderAttack(); }
-
-  const ex = e.target.closest('[data-ex]');
-  if (ex) { S.currentExample = +ex.dataset.ex; renderLists(); renderExample(); }
-
-  const op = e.target.closest('[data-opt]');
-  if (op) {
-    const indices = getFilteredQuizIndices();
-    const realIdx = indices[S.quizIndex];
-    S.quizAnswers[realIdx] = +op.dataset.opt;
-    S.quizTimes[realIdx] = Math.floor((Date.now() - S.quizQuestionStart) / 1000);
-    renderQuiz();
-    saveState();
-  }
-
-  const na = e.target.closest('.nav a');
-  if (na) { document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active')); na.classList.add('active'); }
-});
-
-document.addEventListener('input', e => {
-  const ep = e.target.closest('[data-exparam]');
-  if (ep) { S.exerciseParams[ep.dataset.exparam] = ep.value; S.exerciseChecked = false; renderExercise(); }
-  const ef = e.target.closest('[data-exfield]');
-  if (ef) { S.exerciseAnswers[ef.dataset.exfield] = ef.value; }
-});
-
-document.getElementById('nextStepBtn').addEventListener('click', () => {
-  S.currentStep = Math.min(S.currentStep + 1, ALGORITHMS[S.currentAlgo].steps.length - 1);
-  renderAlgo();
-});
-document.getElementById('prevStepBtn').addEventListener('click', () => {
-  S.currentStep = Math.max(S.currentStep - 1, 0);
-  renderAlgo();
-});
-document.getElementById('resetStepBtn').addEventListener('click', () => {
-  S.currentStep = 0;
-  renderAlgo();
-});
-document.getElementById('nextQuizBtn').addEventListener('click', () => {
-  const indices = getFilteredQuizIndices();
-  S.quizIndex = Math.min(S.quizIndex + 1, indices.length - 1);
-  S.quizQuestionStart = Date.now();
-  renderQuiz();
-  saveState();
-});
-document.getElementById('prevQuizBtn').addEventListener('click', () => {
-  S.quizIndex = Math.max(S.quizIndex - 1, 0);
-  S.quizQuestionStart = Date.now();
-  renderQuiz();
-});
-document.getElementById('restartQuizBtn').addEventListener('click', () => {
-  S.quizIndex = 0;
-  S.quizAnswers = Array(QUIZ.length).fill(null);
-  S.quizTimes = Array(QUIZ.length).fill(0);
-  S.quizQuestionStart = Date.now();
-  S.quizSessionStart = Date.now();
-  renderQuiz();
-  saveState();
-});
-document.getElementById('quizCategoryFilter').addEventListener('change', e => {
-  S.quizCategory = e.target.value;
-  S.quizIndex = 0;
-  S.quizQuestionStart = Date.now();
-  renderQuiz();
-  saveState();
-});
-document.getElementById('modeStudent').addEventListener('click', () => { S.mode = 'student'; renderAlgo(); updateModeIndicator(); });
-document.getElementById('modeTeacher').addEventListener('click', () => { S.mode = 'teacher'; renderAlgo(); updateModeIndicator(); });
-document.getElementById('modeExercise').addEventListener('click', () => {
-  S.exerciseMode = !S.exerciseMode;
-  document.getElementById('modeExercise').classList.toggle('btn-primary', S.exerciseMode);
-  document.getElementById('modeExercise').classList.toggle('btn-secondary', !S.exerciseMode);
-  renderExercise();
-  updateModeIndicator();
-});
-document.getElementById('exerciseCheckBtn').addEventListener('click', () => {
-  const algoId = ALGORITHMS[S.currentAlgo].id;
-  const ex = EXERCISES[algoId];
-  if (!ex) return;
-  S.exerciseResult = ex.run(S.exerciseParams);
-  S.exerciseChecked = true;
-  renderExercise();
-});
-
-// ── Theme toggle ─────────────────────────────────────────────────────────────
-const savedState = loadState();
-let theme = (savedState && savedState.theme) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-document.documentElement.setAttribute('data-theme', theme);
-document.getElementById('themeBtn').addEventListener('click', () => {
-  theme = theme === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', theme);
-  saveState();
-});
-
-// ── Restore persisted progress ──────────────────────────────────────────────
-if (savedState) {
-  if (Number.isInteger(savedState.currentAlgo) && ALGORITHMS[savedState.currentAlgo]) S.currentAlgo = savedState.currentAlgo;
-  if (Array.isArray(savedState.quizAnswers) && savedState.quizAnswers.length === QUIZ.length) S.quizAnswers = savedState.quizAnswers;
-  if (savedState.quizCategory) S.quizCategory = savedState.quizCategory;
-  if (Number.isInteger(savedState.quizIndex)) S.quizIndex = savedState.quizIndex;
-}
-
-// ── Boot ─────────────────────────────────────────────────────────────────────
-renderLists();
-renderAlgo();
-renderExercise();
-renderAttack();
-renderExample();
-renderExamSheet();
-renderQuiz();
-updateModeIndicator();
-
-// Live quiz timer tick
-setInterval(() => {
-  const timerEl = document.getElementById('quizTimer');
-  if (timerEl) timerEl.textContent = formatSeconds(Math.floor((Date.now() - S.quizQuestionStart) / 1000));
-}, 1000);
+  // Progress indicator
+  const completedCount = steps.filter(s => revealed[s.id]).length;
+  document.getElementById('exerciseProgressBar').style.width = `${(completedC
