@@ -1,9 +1,4 @@
-theme: minima
 title: Crypto Algorithms Visualizer
-description: Interactive educational lab for cryptography students and teachers — step-by-step algorithm visualizations, attack experiments, guided examples and quiz mode.
+description: Interactive educational lab for cryptography students and teachers.
 url: https://francescocopelli.github.io
-baseurl: /crypto-algorithms-visualizer
-author: francescocopelli
-show_excerpts: false
-plugins:
-  - jekyll-seo-tag
+baseurl: ""
