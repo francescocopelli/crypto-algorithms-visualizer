@@ -1,7 +1,7 @@
-// exercise_engine.js — step-by-step render logic and event wiring for dynamic exercises
-// Loaded after app.js. All functions rely on globals: S, EXERCISES, ALGORITHMS, renderExercise.
+// exercise_engine.js — step-by-step render logic for dynamic exercises
+// Loaded after app.js. Exposes buildExerciseStepsHTML used by both exercise panels.
+// State management (SEC_EX) and navbar wiring live in the inline script of index.html.
 
-// Called by renderExercise() to build the step-by-step HTML.
 function buildExerciseStepsHTML(steps, answers, revealed, stepIndex) {
   return steps.map((step, i) => {
     const isActive = i === stepIndex;
@@ -47,7 +47,3 @@ function buildExerciseStepsHTML(steps, answers, revealed, stepIndex) {
     </div>`;
   }).join('');
 }
-
-// NOTE: Standalone Exercises section logic (SEC_EX, renderExerciseSection, nav wiring)
-// has been removed from this file to avoid duplicate identifier declarations.
-// The section-specific state and navbar wiring live in the inline script inside index.html.

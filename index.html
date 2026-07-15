@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Crypto Algorithms Visualizer</title>
   <style>
-    /* ── Reset & tokens ─────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --text-xs: .72rem; --text-sm: .85rem; --text-base: 1rem; --text-lg: 1.15rem; --text-xl: 1.4rem;
@@ -29,7 +28,6 @@
     body { background: var(--bg); color: var(--color-text); font-family: system-ui, sans-serif; font-size: var(--text-base); line-height: 1.6; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    /* ── Layout ─────────────────────────────────────────────────────────────── */
     .app-shell { display: grid; grid-template-rows: auto 1fr; min-height: 100dvh; }
     .topbar { background: var(--bg-card); border-bottom: 1px solid var(--border); padding: .75rem 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
     .topbar h1 { font-size: var(--text-lg); font-weight: 700; flex: 1; }
@@ -45,12 +43,11 @@
     section.active { display: block; }
     .two-col { display: grid; grid-template-columns: 220px 1fr; gap: 1.25rem; }
     @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
-    /* ── Cards ──────────────────────────────────────────────────────────────── */
     .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
     .card h4 { font-size: var(--text-sm); font-weight: 600; margin-bottom: .4rem; }
     .callout { background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: var(--radius); padding: .7rem 1rem; font-size: var(--text-sm); }
     .callout.callout-warn { background: var(--warn-soft); border-left-color: var(--warn); }
-    /* ── Buttons ────────────────────────────────────────────────────────────── */
+    .callout.callout-success { background: var(--success-soft); border-left-color: var(--success); }
     .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem 1rem; border-radius: var(--radius); font-size: var(--text-sm); font-weight: 500; border: none; cursor: pointer; transition: var(--transition); }
     .btn-primary { background: var(--accent); color: #fff; }
     .btn-primary:hover { background: var(--accent-hover); }
@@ -58,63 +55,68 @@
     .btn-secondary:hover { background: var(--border); }
     .btn-success { background: var(--success); color: #fff; }
     .btn-group { display: flex; gap: .5rem; flex-wrap: wrap; }
-    /* ── Forms ──────────────────────────────────────────────────────────────── */
     .field { display: flex; flex-direction: column; gap: .3rem; }
     .field label { font-size: var(--text-sm); color: var(--color-text-muted); font-weight: 500; }
     input, select { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .4rem .75rem; color: var(--color-text); font-size: var(--text-sm); width: 100%; }
     input:focus, select:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
     .mono { font-family: 'Courier New', monospace; }
     .helper { font-size: var(--text-xs); color: var(--color-text-muted); }
-    /* ── Sidebar lists ───────────────────────────────────────────────────────── */
     .sidebar-list { display: flex; flex-direction: column; gap: .3rem; }
-    .algo-btn, .attack-btn, .example-btn { display: flex; justify-content: space-between; align-items: center; padding: .5rem .75rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-surface); color: var(--color-text); font-size: var(--text-sm); cursor: pointer; transition: var(--transition); }
-    .algo-btn.active, .attack-btn.active, .example-btn.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
-    .algo-btn:hover:not(.active), .attack-btn:hover:not(.active), .example-btn:hover:not(.active) { background: var(--border); }
-    /* ── Timeline / steps ───────────────────────────────────────────────────── */
+    .algo-btn, .attack-btn, .example-btn, .coteach-btn { display: flex; justify-content: space-between; align-items: center; padding: .5rem .75rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-surface); color: var(--color-text); font-size: var(--text-sm); cursor: pointer; transition: var(--transition); }
+    .algo-btn.active, .attack-btn.active, .example-btn.active, .coteach-btn.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+    .algo-btn:hover:not(.active), .attack-btn:hover:not(.active), .example-btn:hover:not(.active), .coteach-btn:hover:not(.active) { background: var(--border); }
     .timeline { display: flex; flex-direction: column; gap: .5rem; }
     .step { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem; }
     .step.current { border-color: var(--accent); background: var(--accent-soft); }
     .step.step-ok { border-color: var(--success); background: var(--success-soft); }
     .step.step-err { border-color: var(--warn); background: var(--warn-soft); }
     .step-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .4rem; margin-bottom: .3rem; }
-    /* ── Matrix view ────────────────────────────────────────────────────────── */
     .matrix { display: grid; grid-template-columns: repeat(4, 1fr); gap: .3rem; max-width: 220px; }
     .cell { background: var(--bg-surface); border: 1px solid var(--border); border-radius: .3rem; padding: .4rem; text-align: center; font-family: monospace; font-size: var(--text-sm); }
     .cell.highlight { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
-    /* ── KPI row ─────────────────────────────────────────────────────────────── */
     .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
     .kpi { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .6rem .75rem; display: flex; flex-direction: column; gap: .2rem; }
     .kpi span { font-size: var(--text-xs); color: var(--color-text-muted); }
     .kpi strong { font-size: var(--text-sm); }
-    /* ── Risk bar ───────────────────────────────────────────────────────────── */
     .risk-track { height: .45rem; background: var(--bg-surface); border-radius: 999px; overflow: hidden; margin: .5rem 0; }
     .risk-fill { height: 100%; background: var(--danger); border-radius: 999px; transition: width .4s ease; }
-    /* ── Quiz ───────────────────────────────────────────────────────────────── */
     .quiz-option { display: block; width: 100%; text-align: left; padding: .6rem .9rem; margin-bottom: .35rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-surface); color: var(--color-text); font-size: var(--text-sm); cursor: pointer; transition: var(--transition); }
     .quiz-option:hover { border-color: var(--accent); }
     .quiz-option.correct { border-color: var(--success); background: var(--success-soft); color: var(--success); }
     .quiz-option.wrong { border-color: var(--danger); background: var(--warn-soft); color: var(--warn); }
     .progress-bar { height: .35rem; background: var(--bg-surface); border-radius: 999px; overflow: hidden; }
     .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width .3s ease; }
-    /* ── Exercise progress bar ──────────────────────────────────────────────── */
     .ex-progress-wrap { margin: .5rem 0 .75rem; }
     .ex-progress-track { height: .5rem; background: var(--bg-surface); border-radius: 999px; overflow: hidden; }
     .ex-progress-fill { height: 100%; background: var(--success); border-radius: 999px; transition: width .3s ease; }
-    /* ── Teacher grid ───────────────────────────────────────────────────────── */
     .teacher-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
     .teacher-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
-    /* ── Exam sheet grid ────────────────────────────────────────────────────── */
     .exam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
-    /* ── Misc ───────────────────────────────────────────────────────────────── */
     h2 { font-size: var(--text-xl); font-weight: 700; margin-bottom: 1rem; }
     h3 { font-size: var(--text-lg); font-weight: 600; margin-bottom: .6rem; }
     .section-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
     .params-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .6rem; }
+    /* Co-Teaching styles */
+    .lesson-bubble { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: .75rem; position: relative; }
+    .lesson-bubble::before { content: '🤖'; position: absolute; top: -.6rem; left: 1rem; font-size: 1.1rem; background: var(--bg-card); padding: 0 .25rem; border-radius: 50%; }
+    .lesson-bubble.analogy { border-color: var(--accent); background: var(--accent-soft); }
+    .lesson-bubble.warning { border-color: var(--warn); background: var(--warn-soft); }
+    .lesson-bubble.fact { border-color: var(--success); background: var(--success-soft); }
+    .ct-question { background: var(--bg-card); border: 2px solid var(--accent); border-radius: var(--radius); padding: .9rem 1rem; margin-top: .75rem; }
+    .ct-opt { display: block; width: 100%; text-align: left; padding: .5rem .8rem; margin-bottom: .3rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-surface); color: var(--color-text); font-size: var(--text-sm); cursor: pointer; transition: var(--transition); }
+    .ct-opt:hover { border-color: var(--accent); }
+    .ct-opt.ct-correct { border-color: var(--success); background: var(--success-soft); color: var(--success); }
+    .ct-opt.ct-wrong { border-color: var(--danger); background: var(--warn-soft); color: var(--warn); }
+    .faq-list { display: flex; flex-direction: column; gap: .4rem; margin-top: .75rem; }
+    .faq-item summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; padding: .5rem .75rem; background: var(--bg-surface); border-radius: var(--radius); border: 1px solid var(--border); list-style: none; }
+    .faq-item summary::before { content: '❓ '; }
+    .faq-item[open] summary { border-color: var(--accent); color: var(--accent); }
+    .faq-answer { padding: .6rem .75rem; font-size: var(--text-sm); color: var(--color-text-muted); border-left: 3px solid var(--accent); margin-top: .3rem; }
+    .ct-progress-label { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: .3rem; }
   </style>
 </head>
 <body>
 <div class="app-shell">
-  <!-- Topbar -->
   <header>
     <div class="topbar">
       <h1>🔐 Crypto Algorithms Visualizer</h1>
@@ -127,6 +129,7 @@
       <a href="#" data-section="examples">📖 Examples</a>
       <a href="#" data-section="exercises">✏️ Exercises</a>
       <a href="#" data-section="quiz">🧠 Quiz</a>
+      <a href="#" data-section="coteaching">💬 Co-Teaching</a>
       <a href="#" data-section="teacher">👩‍🏫 Teacher</a>
       <a href="#" data-section="examsheet">📋 Exam Sheet</a>
     </nav>
@@ -134,7 +137,7 @@
 
   <main class="main">
 
-    <!-- ── VISUALIZER ─────────────────────────────────────────────────────── -->
+    <!-- VISUALIZER -->
     <section id="sec-visualizer" class="active">
       <div class="section-header">
         <h2>Algorithm Visualizer</h2>
@@ -147,7 +150,6 @@
       <div class="two-col">
         <div class="sidebar-list" id="algoList"></div>
         <div>
-          <!-- Normal panel -->
           <div id="normalPanel">
             <div class="card" style="margin-bottom:.75rem">
               <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem">
@@ -172,10 +174,7 @@
               </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-              <div class="card">
-                <h4>Step timeline</h4>
-                <div class="timeline" id="timeline"></div>
-              </div>
+              <div class="card"><h4>Step timeline</h4><div class="timeline" id="timeline"></div></div>
               <div class="card">
                 <h4>State / values</h4>
                 <p style="font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:.5rem">Model: <span id="algoModel"></span></p>
@@ -183,8 +182,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Exercise panel -->
           <div id="exercisePanel" style="display:none">
             <div class="card">
               <div class="section-header">
@@ -197,32 +194,14 @@
                   <button id="exerciseResetBtn" class="btn btn-secondary">⟳ Ricomincia</button>
                 </div>
               </div>
-
-              <p id="exerciseUnsupported" style="display:none;color:var(--color-text-muted);font-size:var(--text-sm)">
-                Esercizi interattivi disponibili per: RSA e Diffie-Hellman. Seleziona uno di questi algoritmi.
-              </p>
-
+              <p id="exerciseUnsupported" style="display:none;color:var(--color-text-muted);font-size:var(--text-sm)">Esercizi interattivi disponibili per: RSA e Diffie-Hellman.</p>
               <div id="exerciseBody" style="display:none">
-                <!-- Params -->
-                <div class="card" style="margin-bottom:.75rem;background:var(--bg-surface)">
-                  <h4>Parametri</h4>
-                  <div class="params-grid" id="exerciseParams" style="margin-top:.5rem"></div>
-                </div>
-
-                <!-- Progress -->
+                <div class="card" style="margin-bottom:.75rem;background:var(--bg-surface)"><h4>Parametri</h4><div class="params-grid" id="exerciseParams" style="margin-top:.5rem"></div></div>
                 <div class="ex-progress-wrap">
-                  <div style="display:flex;justify-content:space-between;font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:.3rem">
-                    <span id="exerciseProgressLabel">Passaggi completati: 0 / 0</span>
-                  </div>
-                  <div class="ex-progress-track">
-                    <div class="ex-progress-fill" id="exerciseProgressBar" style="width:0%"></div>
-                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:.3rem"><span id="exerciseProgressLabel">Passaggi completati: 0 / 0</span></div>
+                  <div class="ex-progress-track"><div class="ex-progress-fill" id="exerciseProgressBar" style="width:0%"></div></div>
                 </div>
-
-                <!-- Step-by-step cards -->
                 <div class="timeline" id="exerciseStepsContainer"></div>
-
-                <!-- Completion banner -->
                 <div id="exerciseCompletionBanner" style="display:none;margin-top:1rem"></div>
               </div>
             </div>
@@ -231,7 +210,7 @@
       </div>
     </section>
 
-    <!-- ── ATTACKS ────────────────────────────────────────────────────────── -->
+    <!-- ATTACKS -->
     <section id="sec-attacks">
       <h2>⚔️ Attack Lab</h2>
       <div class="two-col">
@@ -252,7 +231,7 @@
       </div>
     </section>
 
-    <!-- ── EXAMPLES ───────────────────────────────────────────────────────── -->
+    <!-- EXAMPLES -->
     <section id="sec-examples">
       <h2>📖 Guided Examples</h2>
       <div class="two-col">
@@ -270,13 +249,12 @@
       </div>
     </section>
 
-    <!-- ── EXERCISES (standalone section) ─────────────────────────────────── -->
+    <!-- EXERCISES -->
     <section id="sec-exercises">
       <div class="section-header">
         <h2>✏️ Exercises</h2>
         <p style="font-size:var(--text-sm);color:var(--color-text-muted)">Premi 🎲 per parametri casuali. Risolvi ogni passo e ricevi feedback immediato.</p>
       </div>
-      <!-- Reuse the same exercise panel structure, driven by the same JS -->
       <div class="card">
         <div class="section-header">
           <div>
@@ -293,17 +271,10 @@
           </div>
         </div>
         <div id="exerciseBodySec">
-          <div class="card" style="margin-bottom:.75rem;background:var(--bg-surface)">
-            <h4>Parametri</h4>
-            <div class="params-grid" id="exerciseParamsSec" style="margin-top:.5rem"></div>
-          </div>
+          <div class="card" style="margin-bottom:.75rem;background:var(--bg-surface)"><h4>Parametri</h4><div class="params-grid" id="exerciseParamsSec" style="margin-top:.5rem"></div></div>
           <div class="ex-progress-wrap">
-            <div style="display:flex;justify-content:space-between;font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:.3rem">
-              <span id="exerciseProgressLabelSec">Passaggi completati: 0 / 0</span>
-            </div>
-            <div class="ex-progress-track">
-              <div class="ex-progress-fill" id="exerciseProgressBarSec" style="width:0%"></div>
-            </div>
+            <div style="display:flex;justify-content:space-between;font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:.3rem"><span id="exerciseProgressLabelSec">Passaggi completati: 0 / 0</span></div>
+            <div class="ex-progress-track"><div class="ex-progress-fill" id="exerciseProgressBarSec" style="width:0%"></div></div>
           </div>
           <div class="timeline" id="exerciseStepsContainerSec"></div>
           <div id="exerciseCompletionBannerSec" style="display:none;margin-top:1rem"></div>
@@ -311,7 +282,7 @@
       </div>
     </section>
 
-    <!-- ── QUIZ ───────────────────────────────────────────────────────────── -->
+    <!-- QUIZ -->
     <section id="sec-quiz">
       <div class="section-header">
         <h2>🧠 Quiz</h2>
@@ -348,13 +319,56 @@
       </div>
     </section>
 
-    <!-- ── TEACHER ────────────────────────────────────────────────────────── -->
+    <!-- CO-TEACHING -->
+    <section id="sec-coteaching">
+      <div class="section-header">
+        <h2>💬 Co-Teaching</h2>
+        <p style="font-size:var(--text-sm);color:var(--color-text-muted)">Il tutor ti guida passo dopo passo. Rispondi alle domande di verifica e consulta le FAQ.</p>
+      </div>
+      <div class="two-col">
+        <!-- Sidebar argomenti -->
+        <div>
+          <div class="sidebar-list" id="coteachList"></div>
+          <div class="card" style="margin-top:.75rem">
+            <h4>Progresso</h4>
+            <div id="ctProgressSummary" style="margin-top:.5rem;display:flex;flex-direction:column;gap:.3rem"></div>
+          </div>
+        </div>
+        <!-- Pannello lezione -->
+        <div id="coteachPanel">
+          <div class="card" style="margin-bottom:.75rem">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem">
+              <div>
+                <h3 id="ctTopicTitle"></h3>
+                <span id="ctTopicTag" class="badge primary" style="margin-top:.25rem"></span>
+              </div>
+              <div class="btn-group">
+                <button id="ctPrevBtn" class="btn btn-secondary">◀ Indietro</button>
+                <button id="ctNextBtn" class="btn btn-primary">Avanti ▶</button>
+                <button id="ctRestartBtn" class="btn btn-secondary">⟳ Riparti</button>
+              </div>
+            </div>
+            <div class="ct-progress-label"><span id="ctStepLabel">Passo 1 / 1</span></div>
+            <div class="progress-bar" style="margin-bottom:.75rem"><div class="progress-fill" id="ctProgressBar" style="width:0%"></div></div>
+            <!-- Contenuto lezione generato da JS -->
+            <div id="ctLessonContent"></div>
+          </div>
+          <!-- FAQ accordion -->
+          <div class="card">
+            <h4>❓ Domande frequenti su questo argomento</h4>
+            <div class="faq-list" id="ctFaqList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEACHER -->
     <section id="sec-teacher">
       <h2>👩‍🏫 Teacher Mode</h2>
       <div class="teacher-grid" id="teacherGrid"></div>
     </section>
 
-    <!-- ── EXAM SHEET ─────────────────────────────────────────────────────── -->
+    <!-- EXAM SHEET -->
     <section id="sec-examsheet">
       <h2>📋 Exam Sheet</h2>
       <div class="exam-grid" id="examSheetGrid"></div>
@@ -367,7 +381,7 @@
 <script src="exercise_engine.js"></script>
 <script>
 // ── Section navigation ──────────────────────────────────────────────────────
-const SECTIONS = ['visualizer','attacks','examples','exercises','quiz','teacher','examsheet'];
+const SECTIONS = ['visualizer','attacks','examples','exercises','quiz','coteaching','teacher','examsheet'];
 document.querySelectorAll('.nav a').forEach(a => {
   a.addEventListener('click', e => {
     e.preventDefault();
@@ -379,19 +393,14 @@ document.querySelectorAll('.nav a').forEach(a => {
       if (el) el.classList.toggle('active', s === sec);
     });
     if (sec === 'exercises') renderExerciseSection();
+    if (sec === 'coteaching') renderCoteach();
   });
 });
 
-// ── Standalone Exercises section ────────────────────────────────────────────
+// ── Standalone Exercises ────────────────────────────────────────────────────
 const SEC_EX = {
-  algoId: 'rsa',
-  params: {},
-  steps: [],
-  stepIndex: 0,
-  answers: {},
-  revealed: {}
+  algoId: 'rsa', params: {}, steps: [], stepIndex: 0, answers: {}, revealed: {}
 };
-
 function initSecEx(algoId) {
   SEC_EX.algoId = algoId;
   const ex = EXERCISES[algoId];
@@ -405,120 +414,425 @@ function initSecEx(algoId) {
   SEC_EX.answers[algoId] = SEC_EX.answers[algoId] || {};
   SEC_EX.revealed[algoId] = SEC_EX.revealed[algoId] || {};
 }
-
 function renderExerciseSection() {
   const algoId = SEC_EX.algoId;
   const ex = EXERCISES[algoId];
   if (!ex) return;
   if (!SEC_EX.steps || SEC_EX.steps.length === 0) initSecEx(algoId);
-
-  const params = SEC_EX.params[algoId];
-  const answers = SEC_EX.answers[algoId];
-  const revealed = SEC_EX.revealed[algoId];
-  const steps = SEC_EX.steps;
-
+  const params = SEC_EX.params[algoId], answers = SEC_EX.answers[algoId], revealed = SEC_EX.revealed[algoId], steps = SEC_EX.steps;
   document.getElementById('exerciseTitleSec').textContent = ex.title;
   document.getElementById('exerciseGoalSec').textContent = ex.goal;
   document.getElementById('exerciseAlgoSelect').value = algoId;
-
   document.getElementById('exerciseParamsSec').innerHTML = ex.params.map(p =>
-    `<div class="field"><label for="exparamsec-${p.id}">${p.label}</label>
-      <input class="mono" id="exparamsec-${p.id}" data-secparam="${p.id}" value="${params[p.id]}" inputmode="numeric"/></div>`
+    `<div class="field"><label for="exparamsec-${p.id}">${p.label}</label><input class="mono" id="exparamsec-${p.id}" data-secparam="${p.id}" value="${params[p.id]}" inputmode="numeric"/></div>`
   ).join('');
-
   const completedCount = steps.filter(s => revealed[s.id]).length;
   const pct = steps.length > 0 ? Math.round(completedCount / steps.length * 100) : 0;
   document.getElementById('exerciseProgressBarSec').style.width = `${pct}%`;
   document.getElementById('exerciseProgressLabelSec').textContent = `Passaggi completati: ${completedCount} / ${steps.length}`;
-
-  document.getElementById('exerciseStepsContainerSec').innerHTML = buildExerciseStepsHTML(steps, answers, revealed, SEC_EX.stepIndex).replace(/data-checkstep=/g, 'data-checkstepsec=').replace(/data-showstep=/g, 'data-showstepsec=').replace(/data-stepidx=/g, 'data-secstepidx=').replace(/id="exstep-input-/g, 'id="exstepsecinput-').replace(/id="exstep-/g, 'id="exstepsec-');
-
+  document.getElementById('exerciseStepsContainerSec').innerHTML = buildExerciseStepsHTML(steps, answers, revealed, SEC_EX.stepIndex)
+    .replace(/data-checkstep=/g,'data-checkstepsec=').replace(/data-showstep=/g,'data-showstepsec=')
+    .replace(/data-stepidx=/g,'data-secstepidx=').replace(/id="exstep-input-/g,'id="exstepsecinput-').replace(/id="exstep-/g,'id="exstepsec-');
   const allDone = steps.length > 0 && steps.every(s => revealed[s.id]);
-  const allCorrect = allDone && steps.every(s => String(answers[s.id] || '').trim() === s.answer);
+  const allCorrect = allDone && steps.every(s => String(answers[s.id]||'').trim() === s.answer);
   const banner = document.getElementById('exerciseCompletionBannerSec');
   if (allDone) {
     banner.style.display = '';
-    banner.innerHTML = allCorrect
-      ? `<strong>Ottimo! Tutti i passaggi corretti ✓</strong> Premi "Nuovo esercizio" per una nuova sessione.`
-      : `<strong>Esercizio completato.</strong> Riprova con "Nuovo esercizio" per consolidare.`;
+    banner.innerHTML = allCorrect ? `<strong>Ottimo! Tutti i passaggi corretti ✓</strong>` : `<strong>Esercizio completato.</strong> Riprova per consolidare.`;
     banner.className = allCorrect ? 'callout' : 'callout callout-warn';
   } else { banner.style.display = 'none'; }
 }
-
 document.getElementById('exerciseBodySec').addEventListener('click', e => {
-  const algoId = SEC_EX.algoId;
-  const steps = SEC_EX.steps;
-  const answers = SEC_EX.answers[algoId];
-  const revealed = SEC_EX.revealed[algoId];
-
+  const algoId = SEC_EX.algoId, steps = SEC_EX.steps, answers = SEC_EX.answers[algoId], revealed = SEC_EX.revealed[algoId];
   const checkBtn = e.target.closest('[data-checkstepsec]');
   if (checkBtn) {
-    const idx = +checkBtn.dataset.checkstepsec;
-    const step = steps[idx];
-    const inputEl = document.getElementById(`exstepsecinput-${idx}`);
-    const val = inputEl ? inputEl.value : '';
-    answers[step.id] = val;
-    revealed[step.id] = true;
-    const correct = String(val).trim() === step.answer;
-    if (correct && SEC_EX.stepIndex === idx) SEC_EX.stepIndex = Math.min(idx + 1, steps.length - 1);
-    renderExerciseSection();
-    return;
+    const idx = +checkBtn.dataset.checkstepsec, step = steps[idx];
+    const val = (document.getElementById(`exstepsecinput-${idx}`) || {}).value || '';
+    answers[step.id] = val; revealed[step.id] = true;
+    if (String(val).trim() === step.answer && SEC_EX.stepIndex === idx) SEC_EX.stepIndex = Math.min(idx+1, steps.length-1);
+    renderExerciseSection(); return;
   }
   const showBtn = e.target.closest('[data-showstepsec]');
   if (showBtn) {
-    const idx = +showBtn.dataset.showstepsec;
-    const step = steps[idx];
-    answers[step.id] = step.answer;
-    revealed[step.id] = true;
-    if (SEC_EX.stepIndex === idx) SEC_EX.stepIndex = Math.min(idx + 1, steps.length - 1);
-    renderExerciseSection();
-    return;
+    const idx = +showBtn.dataset.showstepsec, step = steps[idx];
+    answers[step.id] = step.answer; revealed[step.id] = true;
+    if (SEC_EX.stepIndex === idx) SEC_EX.stepIndex = Math.min(idx+1, steps.length-1);
+    renderExerciseSection(); return;
   }
 });
-
 document.getElementById('exerciseBodySec').addEventListener('input', e => {
   const inp = e.target.closest('[data-secstepidx]');
-  if (inp) {
-    const algoId = SEC_EX.algoId;
-    const step = SEC_EX.steps[+inp.dataset.secstepidx];
-    if (step) SEC_EX.answers[algoId][step.id] = inp.value;
-  }
+  if (inp) { const step = SEC_EX.steps[+inp.dataset.secstepidx]; if (step) SEC_EX.answers[SEC_EX.algoId][step.id] = inp.value; }
   const pInp = e.target.closest('[data-secparam]');
   if (pInp) {
     const algoId = SEC_EX.algoId;
     SEC_EX.params[algoId][pInp.dataset.secparam] = pInp.value;
     const ex = EXERCISES[algoId];
-    if (ex) { SEC_EX.steps = ex.buildSteps(SEC_EX.params[algoId]); SEC_EX.answers[algoId] = {}; SEC_EX.revealed[algoId] = {}; SEC_EX.stepIndex = 0; }
+    if (ex) { SEC_EX.steps = ex.buildSteps(SEC_EX.params[algoId]); SEC_EX.answers[algoId]={}; SEC_EX.revealed[algoId]={}; SEC_EX.stepIndex=0; }
     renderExerciseSection();
   }
 });
-
-document.getElementById('exerciseAlgoSelect').addEventListener('change', e => {
-  initSecEx(e.target.value);
-  renderExerciseSection();
-});
-
+document.getElementById('exerciseAlgoSelect').addEventListener('change', e => { initSecEx(e.target.value); renderExerciseSection(); });
 document.getElementById('exerciseRandomBtnSec').addEventListener('click', () => {
-  const algoId = SEC_EX.algoId;
-  const ex = EXERCISES[algoId];
+  const algoId = SEC_EX.algoId, ex = EXERCISES[algoId];
   if (!ex || !ex.generateRandom) return;
   SEC_EX.params[algoId] = ex.generateRandom();
   SEC_EX.steps = ex.buildSteps(SEC_EX.params[algoId]);
-  SEC_EX.answers[algoId] = {}; SEC_EX.revealed[algoId] = {}; SEC_EX.stepIndex = 0;
+  SEC_EX.answers[algoId]={}; SEC_EX.revealed[algoId]={}; SEC_EX.stepIndex=0;
   renderExerciseSection();
 });
-
 document.getElementById('exerciseResetBtnSec').addEventListener('click', () => {
-  const algoId = SEC_EX.algoId;
-  const ex = EXERCISES[algoId];
-  SEC_EX.answers[algoId] = {}; SEC_EX.revealed[algoId] = {}; SEC_EX.stepIndex = 0;
+  const algoId = SEC_EX.algoId, ex = EXERCISES[algoId];
+  SEC_EX.answers[algoId]={}; SEC_EX.revealed[algoId]={}; SEC_EX.stepIndex=0;
   if (ex) SEC_EX.steps = ex.buildSteps(SEC_EX.params[algoId]);
   renderExerciseSection();
 });
+initSecEx('rsa'); initSecEx('dh');
 
-// Init
-initSecEx('rsa');
-initSecEx('dh');
+// ── Co-Teaching ─────────────────────────────────────────────────────────────
+const CT_TOPICS = [
+  {
+    id: 'rsa', label: 'RSA', tag: 'Chiave pubblica',
+    steps: [
+      {
+        type: 'intro',
+        html: `<div class="lesson-bubble">Ciao! Parliamo di <strong>RSA</strong>, l'algoritmo a chiave pubblica più famoso. L'idea di base è semplice: usi una chiave pubblica per cifrare e una privata per decifrare.</div>
+<div class="lesson-bubble analogy"><strong>Analogia 📦</strong> Immagina un lucchetto aperto che chiunque può usare per chiudere una cassetta (cifrare). Solo tu hai la chiave per aprirla (decifrare).</div>`,
+        question: null
+      },
+      {
+        type: 'keygen',
+        html: `<div class="lesson-bubble"><strong>Generazione delle chiavi</strong><br>Scegli due primi <em>p</em> e <em>q</em>, calcola <em>n = p·q</em> e la funzione di Eulero <em>φ(n) = (p−1)(q−1)</em>. Scegli <em>e</em> con gcd(e, φ(n)) = 1, poi trova <em>d</em> = inverso di <em>e</em> mod φ(n) con l'EEA.</div>
+<div class="lesson-bubble fact"><strong>Fatto chiave 🔑</strong> La chiave pubblica è (n, e); la chiave privata è (n, d). Il segreto sta nell'impossibilità di fattorizzare n in tempi ragionevoli.</div>`,
+        question: {
+          text: 'Quale operazione garantisce che d esista?',
+          opts: ['d = n mod e', 'gcd(e, φ(n)) = 1', 'e < n', 'p · q > 100'],
+          correct: 1,
+          explanation: 'Serve gcd(e, φ(n)) = 1 per garantire l\'esistenza dell\'inverso modulare di e, da cui si ricava d con l\'algoritmo esteso di Euclide.'
+        }
+      },
+      {
+        type: 'enc_dec',
+        html: `<div class="lesson-bubble"><strong>Cifratura e decifratura</strong><br>Cifratura: <em>c = m<sup>e</sup> mod n</em>.<br>Decifratura: <em>m = c<sup>d</sup> mod n</em>.<br>Funziona grazie al Teorema di Eulero: m<sup>ed</sup> ≡ m (mod n) quando m &lt; n.</div>
+<div class="lesson-bubble warning"><strong>Attenzione ⚠️</strong> RSA testbook è <em>deterministico</em>: stesso messaggio → stesso cifrato. Per uso reale serve padding randomizzato (OAEP).</div>`,
+        question: {
+          text: 'Cosa succede se si usa lo stesso k per cifrare due messaggi diversi in RSA testbook?',
+          opts: ['Niente di speciale', 'I ciphertext sono identici se i messaggi sono uguali', 'La chiave privata trapela', 'n viene fattorizzato'],
+          correct: 1,
+          explanation: 'RSA testbook è deterministico: messaggi identici producono cifrati identici, rendendo visibile la struttura del testo in chiaro.'
+        }
+      },
+      {
+        type: 'summary',
+        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo RSA ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Chiave pubblica: (n, e) — distribuita liberamente</li><li>Chiave privata: (n, d) — tenuta segreta</li><li>Sicurezza basata sulla difficoltà di fattorizzare n</li><li>In produzione: sempre OAEP o PSS, mai testbook RSA</li></ul></div>`,
+        question: null
+      }
+    ],
+    faqs: [
+      { q: 'Perché si usano numeri primi per p e q?', a: 'La funzione di Eulero per n=p·q è (p−1)(q−1) solo se p e q sono primi. Questo permette di calcolare φ(n) in modo semplice conoscendo la fattorizzazione, ma rende impossibile calcolarlo conoscendo solo n.' },
+      { q: 'Come si calcola d nella pratica?', a: 'Con l\'algoritmo esteso di Euclide (EEA) applicato a (e, φ(n)). Si trovano i coefficienti di Bézout x, y tali che e·x + φ(n)·y = 1; allora d = x mod φ(n).' },
+      { q: 'RSA cifra direttamente file grandi?', a: 'No. RSA in pratica cifra solo una chiave simmetrica (es. AES), che poi viene usata per i dati. Questo schema si chiama crittografia ibrida.' },
+      { q: 'Cosa differenzia RSA-OAEP da RSA testbook?', a: 'OAEP aggiunge padding randomizzato prima della cifratura, rompendo il determinismo e rendendo RSA semanticamente sicuro contro attacchi a testo in chiaro scelto (CPA).' }
+    ]
+  },
+  {
+    id: 'dh', label: 'Diffie-Hellman', tag: 'Key exchange',
+    steps: [
+      {
+        type: 'intro',
+        html: `<div class="lesson-bubble">Benvenuto in <strong>Diffie-Hellman</strong>! Questo protocollo permette a due parti di concordare un segreto condiviso su un canale pubblico, senza mai trasmettere il segreto stesso.</div>
+<div class="lesson-bubble analogy"><strong>Analogia 🎨</strong> Alice e Bob mescolano un colore segreto con un colore pubblico. Scambiano i risultati e ciascuno aggiunge di nuovo il proprio colore segreto: ottengono la stessa tinta finale, ma un osservatore non può ricostruirla.</div>`,
+        question: null
+      },
+      {
+        type: 'protocol',
+        html: `<div class="lesson-bubble"><strong>Il protocollo passo per passo</strong><br>1. Concordano pubblicamente <em>p</em> (primo) e <em>g</em> (generatore).<br>2. Alice sceglie segreto <em>a</em>, pubblica <em>A = g<sup>a</sup> mod p</em>.<br>3. Bob sceglie segreto <em>b</em>, pubblica <em>B = g<sup>b</sup> mod p</em>.<br>4. Alice calcola <em>K = B<sup>a</sup> mod p</em>; Bob calcola <em>K = A<sup>b</sup> mod p</em>. Stesso K!</div>
+<div class="lesson-bubble fact"><strong>Perché funziona? 🔢</strong> B<sup>a</sup> = (g<sup>b</sup>)<sup>a</sup> = g<sup>ab</sup> = (g<sup>a</sup>)<sup>b</sup> = A<sup>b</sup>. La commutatività degli esponenti garantisce lo stesso risultato.</div>`,
+        question: {
+          text: 'Cosa deve rimanere segreto in DH?',
+          opts: ['p e g', 'A e B (i valori pubblici)', 'a e b (gli esponenti privati)', 'Il risultato finale K'],
+          correct: 2,
+          explanation: 'p, g, A e B possono essere tutti pubblici. Solo gli esponenti privati a e b devono restare segreti: senza di essi un attaccante non può calcolare K.'
+        }
+      },
+      {
+        type: 'threat',
+        html: `<div class="lesson-bubble warning"><strong>Vulnerabilità MITM ⚠️</strong> DH da solo non autentica le parti! Un man-in-the-middle può intercettare e sostituire A e B, stabilendo chiavi separate con Alice e Bob senza che nessuno se ne accorga.</div>
+<div class="lesson-bubble"><strong>Contromisura</strong> Autenticare i valori pubblici con firme digitali o certificati (come in TLS). DH autenticato diventa lo scambio di chiavi sicuro.</div>`,
+        question: {
+          text: 'Perché DH senza autenticazione è vulnerabile a MITM?',
+          opts: ['Perché p è troppo piccolo', 'Perché le parti non verificano l\'identità di chi invia A e B', 'Perché K è prevedibile', 'Perché g deve essere segreto'],
+          correct: 1,
+          explanation: 'Senza autenticazione nulla garantisce che A provenga davvero da Alice o B da Bob. Un attaccante può inserirsi nel mezzo e stabilire due chiavi distinte.'
+        }
+      },
+      {
+        type: 'summary',
+        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo DH ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Parametri pubblici: p, g, A, B</li><li>Segreti: a (Alice), b (Bob)</li><li>Segreto condiviso: K = g<sup>ab</sup> mod p</li><li>Sicurezza basata sul Problema del Logaritmo Discreto (DLP)</li><li>Senza autenticazione → vulnerabile a MITM</li></ul></div>`,
+        question: null
+      }
+    ],
+    faqs: [
+      { q: 'Cosa rende sicuro il DLP?', a: 'Dato g, p e A = g^a mod p, trovare a è computazionalmente difficile con p grande (es. 2048 bit). I migliori algoritmi noti (index calculus) non scalano efficientemente.' },
+      { q: 'Qual è la differenza tra DH e ECDH?', a: 'ECDH sostituisce il gruppo moltiplicativo mod p con i punti di una curva ellittica. La moltiplicazione scalare sostituisce l\'esponenziazione, offrendo sicurezza equivalente con chiavi molto più corte.' },
+      { q: 'DH genera una chiave di sessione o permanente?', a: 'In genere genera una chiave di sessione effimera (ephemeral DH / DHE), diversa ad ogni connessione. Questo garantisce la forward secrecy: la compromissione di una chiave passata non espone le comunicazioni future.' },
+      { q: 'Come si usa DH in TLS?', a: 'In TLS 1.3, ECDHE (DH su curva ellittica, effimero) è obbligatorio per lo scambio di chiavi. I valori pubblici vengono autenticati con la firma del certificato del server.' }
+    ]
+  },
+  {
+    id: 'aes', label: 'AES', tag: 'Block cipher',
+    steps: [
+      {
+        type: 'intro',
+        html: `<div class="lesson-bubble">AES (<strong>Advanced Encryption Standard</strong>) è il cifrario a blocchi simmetrico più usato al mondo. Cifra blocchi da 128 bit con chiavi da 128, 192 o 256 bit attraverso 10–14 round.</div>
+<div class="lesson-bubble analogy"><strong>Analogia 🧩</strong> Ogni round rimescola, sostituisce e mescola i pezzi del puzzle in modo diverso. Dopo abbastanza round, il messaggio originale è completamente mascherato.</div>`,
+        question: null
+      },
+      {
+        type: 'rounds',
+        html: `<div class="lesson-bubble"><strong>Le 4 trasformazioni del round AES</strong><br><strong>1. AddRoundKey</strong>: XOR con la sottochiave del round (mixing della chiave).<br><strong>2. SubBytes</strong>: ogni byte viene sostituito via S-box (non-linearità).<br><strong>3. ShiftRows</strong>: le righe vengono ruotate (diffusione posizionale).<br><strong>4. MixColumns</strong>: le colonne vengono mescolate via GF(2⁸) (diffusione completa).</div>
+<div class="lesson-bubble fact"><strong>Confusione vs Diffusione 🎯</strong> SubBytes crea confusione (relazione complessa chiave-cifrato); MixColumns + ShiftRows creano diffusione (un bit di input influenza molti bit di output).</div>`,
+        question: {
+          text: 'Quale trasformazione AES introduce la non-linearità?',
+          opts: ['AddRoundKey', 'ShiftRows', 'SubBytes', 'MixColumns'],
+          correct: 2,
+          explanation: 'SubBytes applica la S-box non-lineare a ogni byte. Senza non-linearità AES sarebbe un sistema affine, facilmente attaccabile con algebra lineare.'
+        }
+      },
+      {
+        type: 'modes',
+        html: `<div class="lesson-bubble"><strong>Modalità operative</strong><br>AES da solo cifra un singolo blocco. Per dati lunghi servono modalità:<br>• <strong>ECB</strong>: blocchi indipendenti — insicuro, rivela pattern.<br>• <strong>CBC</strong>: ogni blocco XOR col precedente — no pattern, ma no integrità.<br>• <strong>GCM</strong>: cifratura + autenticazione in un colpo — la scelta moderna.</div>
+<div class="lesson-bubble warning"><strong>Errore comune ⚠️</strong> ECB è insicuro per dati strutturati: blocchi uguali → cifrati uguali. L\'immagine del pinguino ECB è il caso studio più famoso.</div>`,
+        question: {
+          text: 'Perché ECB è considerato insicuro per dati strutturati?',
+          opts: ['Chiave troppo corta', 'Blocchi uguali producono cifrati uguali', 'Non usa XOR', 'Non ha AddRoundKey'],
+          correct: 1,
+          explanation: 'ECB cifra ogni blocco in modo indipendente e deterministico: blocchi di plaintext identici danno sempre lo stesso ciphertext, rivelando la struttura del messaggio originale.'
+        }
+      },
+      {
+        type: 'summary',
+        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo AES ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Cifrario simmetrico a blocchi (128 bit)</li><li>4 trasformazioni per round: AddRoundKey, SubBytes, ShiftRows, MixColumns</li><li>Non-linearità da SubBytes; diffusione da MixColumns + ShiftRows</li><li>Per uso reale: AES-GCM o AES-CTR+HMAC. Mai ECB su dati strutturati.</li></ul></div>`,
+        question: null
+      }
+    ],
+    faqs: [
+      { q: 'Quanti round ha AES?', a: 'AES-128: 10 round. AES-192: 12 round. AES-256: 14 round. L\'ultimo round non include MixColumns.' },
+      { q: 'Cosa succede se si riusa un IV in CBC?', a: 'Un IV ripetuto con la stessa chiave permette attacchi per recuperare informazioni sul plaintext, in particolare il primo blocco diventa prevedibile.' },
+      { q: 'AES-GCM fornisce anche integrità?', a: 'Sì. GCM è un modo AEAD: cifra e autentica in un unico passaggio, producendo un authentication tag che rileva qualsiasi modifica al ciphertext o ai dati associati.' },
+      { q: 'Perché l\'ultimo round AES non ha MixColumns?', a: 'Per ragioni di simmetria nella struttura matematica dell\'inverso: rimuovere MixColumns dall\'ultimo round rende la decifratura strutturalmente identica alla cifratura, semplificando le implementazioni hardware.' }
+    ]
+  },
+  {
+    id: 'hash', label: 'Hash & MAC', tag: 'Integrità',
+    steps: [
+      {
+        type: 'intro',
+        html: `<div class="lesson-bubble">Le <strong>funzioni hash crittografiche</strong> trasformano dati di lunghezza arbitraria in un digest di dimensione fissa. Sono one-way: non è possibile risalire all\'input dall\'output.</div>
+<div class="lesson-bubble analogy"><strong>Analogia 🔍</strong> Come un'impronta digitale: identifica univocamente un oggetto, ma non si può ricostruire l'oggetto dall'impronta.</div>`,
+        question: null
+      },
+      {
+        type: 'properties',
+        html: `<div class="lesson-bubble"><strong>Proprietà fondamentali</strong><br>• <strong>Pre-image resistance</strong>: dato H(m), impossibile trovare m.<br>• <strong>Second pre-image resistance</strong>: dato m, impossibile trovare m' ≠ m con H(m')=H(m).<br>• <strong>Collision resistance</strong>: impossibile trovare m, m' con H(m)=H(m').<br>• <strong>Avalanche effect</strong>: un bit di input cambia ≈50% dei bit di output.</div>`,
+        question: {
+          text: 'Quale proprietà afferma che non si può trovare due messaggi distinti con lo stesso hash?',
+          opts: ['Pre-image resistance', 'Collision resistance', 'Avalanche effect', 'Second pre-image resistance'],
+          correct: 1,
+          explanation: 'La collision resistance garantisce che sia computazionalmente impossibile trovare due input m ≠ m\' con H(m) = H(m\'). È la proprietà più forte delle tre.'
+        }
+      },
+      {
+        type: 'mac',
+        html: `<div class="lesson-bubble"><strong>Hash vs MAC</strong><br>Un hash senza chiave fornisce solo un'impronta pubblica — chiunque può calcolarla. Un <strong>MAC</strong> (Message Authentication Code) aggiunge una chiave segreta: solo chi conosce la chiave può generare o verificare il tag.</div>
+<div class="lesson-bubble fact"><strong>HMAC</strong> è la costruzione standard: HMAC(K, m) = H(K ⊕ opad ∥ H(K ⊕ ipad ∥ m)). Evita l\'attacco di length-extension delle costruzioni naive.</div>`,
+        question: {
+          text: 'Perché un semplice H(chiave ∥ messaggio) non è sicuro come HMAC?',
+          opts: ['È troppo lento', 'È vulnerabile ad attacchi di length-extension', 'Non usa XOR', 'La chiave è troppo corta'],
+          correct: 1,
+          explanation: 'Le funzioni hash basate su Merkle-Damgård (SHA-256, SHA-1...) sono vulnerabili al length-extension: un attaccante può estendere il messaggio e calcolare un tag valido senza conoscere la chiave. HMAC neutralizza questo con la struttura a doppio hash.'
+        }
+      },
+      {
+        type: 'summary',
+        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo Hash & MAC ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Hash: one-way, senza chiave, impronta pubblica</li><li>MAC: keyed hash, fornisce autenticazione e integrità</li><li>HMAC è la costruzione standard sicura</li><li>MD5 e SHA-1 sono obsoleti — usare SHA-256 o SHA-3</li></ul></div>`,
+        question: null
+      }
+    ],
+    faqs: [
+      { q: 'SHA-256 è ancora sicuro?', a: 'Sì. A oggi non sono note collisioni pratiche su SHA-256. È lo standard de facto per integrità e HMAC. SHA-3 (Keccak) è l\'alternativa moderna basata su un design diverso (sponge construction).' },
+      { q: 'Cosa distingue CMAC da HMAC?', a: 'HMAC si basa su una funzione hash (es. SHA-256); CMAC si basa su un cifrario a blocchi (es. AES). Entrambi forniscono autenticazione sicura, ma CMAC è preferito in contesti hardware dove AES è già disponibile.' },
+      { q: 'Un hash garantisce autenticità?', a: 'No. Un hash senza chiave dice solo che i dati non sono stati corrotti accidentalmente — non che provengano da una fonte fidata. Per autenticità serve un MAC (chiave condivisa) o una firma digitale (chiave pubblica).' },
+      { q: 'Cos\'è il birthday attack?', a: 'Sfrutta il paradosso del compleanno: per trovare una collisione su un hash di n bit bastano ≈2^(n/2) tentativi, non 2^n. Per SHA-256, la sicurezza contro collisioni è 128 bit, non 256.' }
+    ]
+  },
+  {
+    id: 'aead', label: 'AEAD', tag: 'Conf + integrità',
+    steps: [
+      {
+        type: 'intro',
+        html: `<div class="lesson-bubble"><strong>AEAD</strong> (Authenticated Encryption with Associated Data) combina confidenzialità e integrità in un unico primitivo. Esempi: AES-GCM, ChaCha20-Poly1305.</div>
+<div class="lesson-bubble analogy"><strong>Analogia 📦🔒</strong> Non è solo una cassaforte (confidenzialità) — è una cassaforte con sigillo antimanomissione (autenticazione). Se qualcuno tocca la cassaforte, il sigillo si rompe e lo sai.</div>`,
+        question: null
+      },
+      {
+        type: 'nonce',
+        html: `<div class="lesson-bubble"><strong>Il ruolo del nonce</strong><br>Il nonce (number used once) deve essere unico per ogni cifratura con la stessa chiave. In AES-GCM è tipicamente 96 bit. Non ha bisogno di essere segreto, ma non può mai ripetersi.</div>
+<div class="lesson-bubble warning"><strong>Nonce reuse = disastro ⚠️</strong> Riusare nonce + chiave rivela relazioni tra plaintexts e distrugge l\'autenticità. Due ciphertext con lo stesso nonce: C1 ⊕ C2 = P1 ⊕ P2.</div>`,
+        question: {
+          text: 'Cosa succede se si riusa lo stesso nonce con la stessa chiave in AES-GCM?',
+          opts: ['Rallenta la cifratura', 'Espone la XOR dei plaintexts e rompe l\'autenticazione', 'Il tag diventa più lungo', 'Non succede nulla'],
+          correct: 1,
+          explanation: 'Il riuso di nonce in modalità stream-like (GCM) produce lo stesso keystream: XOR di due ciphertext dà la XOR dei plaintext. Inoltre il tag di autenticazione può essere falsificato.'
+        }
+      },
+      {
+        type: 'verify_first',
+        html: `<div class="lesson-bubble"><strong>Verify-then-decrypt</strong><br>La regola d\'oro AEAD: verifica sempre il tag <em>prima</em> di usare il plaintext. Decifrare prima e verificare dopo espone a oracle attack (padding oracle, decryption oracle).</div>
+<div class="lesson-bubble fact"><strong>AAD (Associated Data)</strong> Dati autenticati ma non cifrati — es. header di rete. Garantisce che anche i metadati non vengano modificati, senza dover cifrare l\'intero pacchetto.</div>`,
+        question: {
+          text: 'Qual è l\'ordine corretto nell\'elaborazione di un messaggio AEAD?',
+          opts: ['Decifra, poi verifica il tag', 'Verifica il tag, poi decifra', 'Cifra il tag, poi decifra', 'Ignora il tag se la chiave è lunga'],
+          correct: 1,
+          explanation: 'Bisogna sempre verificare il tag prima di rilasciare il plaintext. Decifrare prima apre la porta a oracle attack in cui l\'attaccante sfrutta i messaggi di errore per recuperare informazioni.'
+        }
+      },
+      {
+        type: 'summary',
+        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo AEAD ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Confidenzialità + integrità + autenticazione in un colpo</li><li>Nonce unico per ogni (chiave, messaggio) — mai riusare</li><li>Sempre verify-then-decrypt</li><li>Scelta moderna: AES-GCM o ChaCha20-Poly1305</li></ul></div>`,
+        question: null
+      }
+    ],
+    faqs: [
+      { q: 'Quando usare AES-GCM vs ChaCha20-Poly1305?', a: 'AES-GCM è preferibile su hardware con istruzioni AES-NI (praticamente tutti i PC e server moderni). ChaCha20-Poly1305 è ottimo su dispositivi embedded o mobile senza accelerazione hardware per AES.' },
+      { q: 'Il tag AEAD protegge anche i dati associati (AAD)?', a: 'Sì. Il tag copre sia il ciphertext che l\'AAD. Se qualcuno modifica anche solo un bit dell\'header (AAD), la verifica del tag fallirà.' },
+      { q: 'Cos\'è AES-SIV e quando si usa?', a: 'AES-SIV è uno schema AEAD misuse-resistant: anche con nonce ripetuto non rivela il plaintext (rivela solo se due messaggi sono identici). Si usa in contesti dove garantire l\'unicità del nonce è difficile.' },
+      { q: 'AEAD sostituisce completamente TLS?', a: 'No. AEAD risolve la primitive di cifratura autenticata, ma TLS si occupa anche di negoziazione algoritmi, scambio chiavi, autenticazione del server via certificati e molto altro.' }
+    ]
+  }
+];
+
+const CT_STATE = {
+  topicIdx: 0,
+  stepIdx: 0,
+  answered: {},   // { topicId_stepIdx: true/false }
+  completed: {}   // { topicId: stepsCompleted }
+};
+
+function ctTopic() { return CT_TOPICS[CT_STATE.topicIdx]; }
+function ctStep() { return ctTopic().steps[CT_STATE.stepIdx]; }
+
+function renderCoteachSidebar() {
+  document.getElementById('coteachList').innerHTML = CT_TOPICS.map((t, i) => {
+    const done = CT_STATE.completed[t.id] || 0;
+    const total = t.steps.length;
+    const pct = Math.round(done / total * 100);
+    return `<button class="coteach-btn ${i === CT_STATE.topicIdx ? 'active' : ''}" data-ctidx="${i}">
+      <span>${t.label}</span>
+      <span class="badge ${pct === 100 ? 'success' : ''}">${pct}%</span>
+    </button>`;
+  }).join('');
+
+  document.getElementById('ctProgressSummary').innerHTML = CT_TOPICS.map(t => {
+    const done = CT_STATE.completed[t.id] || 0;
+    const total = t.steps.length;
+    return `<div style="font-size:var(--text-xs);display:flex;justify-content:space-between">
+      <span>${t.label}</span><span>${done}/${total} passi</span>
+    </div>`;
+  }).join('');
+}
+
+function renderCoteach() {
+  const topic = ctTopic();
+  const step = ctStep();
+  const stepIdx = CT_STATE.stepIdx;
+  const totalSteps = topic.steps.length;
+  const ansKey = `${topic.id}_${stepIdx}`;
+
+  document.getElementById('ctTopicTitle').textContent = topic.label;
+  document.getElementById('ctTopicTag').textContent = topic.tag;
+  document.getElementById('ctStepLabel').textContent = `Passo ${stepIdx + 1} / ${totalSteps}`;
+  document.getElementById('ctProgressBar').style.width = `${Math.round((stepIdx + 1) / totalSteps * 100)}%`;
+  document.getElementById('ctPrevBtn').disabled = stepIdx === 0;
+  document.getElementById('ctNextBtn').disabled = stepIdx === totalSteps - 1;
+
+  // Lesson content
+  let html = step.html;
+
+  // Question block
+  if (step.question) {
+    const answered = CT_STATE.answered[ansKey];
+    html += `<div class="ct-question">
+      <p style="font-size:var(--text-sm);font-weight:600;margin-bottom:.5rem">✏️ ${step.question.text}</p>`;
+    html += step.question.opts.map((opt, i) => {
+      let cls = 'ct-opt';
+      if (answered !== undefined) {
+        if (i === step.question.correct) cls += ' ct-correct';
+        else if (i === answered && answered !== step.question.correct) cls += ' ct-wrong';
+      }
+      const disabled = answered !== undefined ? 'disabled' : '';
+      return `<button class="${cls}" data-ctopt="${i}" ${disabled}>${opt}</button>`;
+    }).join('');
+    if (answered !== undefined) {
+      html += `<div class="callout" style="margin-top:.5rem;font-size:var(--text-sm)">${step.question.explanation}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  document.getElementById('ctLessonContent').innerHTML = html;
+
+  // FAQ
+  document.getElementById('ctFaqList').innerHTML = topic.faqs.map(f =>
+    `<details class="faq-item"><summary>${f.q}</summary><div class="faq-answer">${f.a}</div></details>`
+  ).join('');
+
+  renderCoteachSidebar();
+}
+
+// Mark progress
+function ctMarkProgress() {
+  const topic = ctTopic();
+  if (!CT_STATE.completed[topic.id]) CT_STATE.completed[topic.id] = 0;
+  CT_STATE.completed[topic.id] = Math.max(CT_STATE.completed[topic.id], CT_STATE.stepIdx + 1);
+}
+
+// Navigation
+document.getElementById('ctNextBtn').addEventListener('click', () => {
+  ctMarkProgress();
+  if (CT_STATE.stepIdx < ctTopic().steps.length - 1) { CT_STATE.stepIdx++; renderCoteach(); }
+});
+document.getElementById('ctPrevBtn').addEventListener('click', () => {
+  if (CT_STATE.stepIdx > 0) { CT_STATE.stepIdx--; renderCoteach(); }
+});
+document.getElementById('ctRestartBtn').addEventListener('click', () => {
+  CT_STATE.stepIdx = 0;
+  CT_STATE.answered = {};
+  renderCoteach();
+});
+
+// Sidebar topic switch
+document.getElementById('coteachList').addEventListener('click', e => {
+  const btn = e.target.closest('[data-ctidx]');
+  if (!btn) return;
+  CT_STATE.topicIdx = +btn.dataset.ctidx;
+  CT_STATE.stepIdx = 0;
+  renderCoteach();
+});
+
+// Answer question
+document.getElementById('ctLessonContent').addEventListener('click', e => {
+  const btn = e.target.closest('[data-ctopt]');
+  if (!btn) return;
+  const topic = ctTopic();
+  const ansKey = `${topic.id}_${CT_STATE.stepIdx}`;
+  if (CT_STATE.answered[ansKey] !== undefined) return;
+  CT_STATE.answered[ansKey] = +btn.dataset.ctopt;
+  ctMarkProgress();
+  renderCoteach();
+});
+
+// Init co-teaching on first open
+renderCoteach();
 </script>
 </body>
 </html>
