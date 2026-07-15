@@ -115,7 +115,7 @@ Massimo 3-4 frasi per risposta, salvo che lo studente chieda una spiegazione app
     // Update system prompt if topic changed
     if (topicId && topicId !== _currentTopic) {
       _currentTopic = topicId;
-      // Inject a context-change note without full history wipe
+      // Inject a context-change note senza cancellare tutta la cronologia
       if (_history.length > 0) {
         _history.push({
           role: 'user',
