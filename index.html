@@ -4,6 +4,12 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Crypto Algorithms Visualizer</title>
+  <meta name="description" content="Visualizer interattivo per algoritmi crittografici: AES, DES, RSA, Diffie-Hellman, hash, MAC, AEAD, ECC. Con quiz, esercizi guidati, exam sheet e co-teaching."/>
+  <meta property="og:title" content="Crypto Algorithms Visualizer"/>
+  <meta property="og:description" content="Allenati su AES, RSA, Diffie-Hellman, hash e AEAD con visualizzazioni, quiz ed esercizi passo-passo."/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:locale" content="it_IT"/>
+  <link rel="icon" href="https://emojiapi.dev/api/v1/1f510.png"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -452,7 +458,15 @@ document.querySelectorAll('.nav a').forEach(a => {
       if (el) el.classList.toggle('active', s === sec);
     });
     if (sec === 'exercises') renderExerciseSection();
-    if (sec === 'coteaching') renderCoteach();
+    if (sec === 'coteaching') {
+      renderCoteach();
+      if (!window.__aiTutorAutoLoaded) {
+        window.__aiTutorAutoLoaded = true;
+        if (typeof window.loadAiTutorModel === 'function') {
+          window.loadAiTutorModel();
+        }
+      }
+    }
   });
 });
 
@@ -734,299 +748,27 @@ const CT_TOPICS = [
       },
       {
         type: 'summary',
-        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo Hash & MAC ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Hash: one-way, senza chiave, impronta pubblica</li><li>MAC: keyed hash, fornisce autenticazione e integrità</li><li>HMAC è la costruzione standard sicura</li><li>MD5 e SHA-1 sono obsoleti — usare SHA-256 o SHA-3</li></ul></div>`,
+        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo Hash & MAC ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Hash: one-way, senza chiave, impronta pubblica</li><li>MAC: keyed hash, fornisce autenticazione e integrità</li><li>HMAC è la costruzione standard contro length-extension</li></ul></div>`,
         question: null
       }
     ],
     faqs: [
-      { q: 'SHA-256 è ancora sicuro?', a: 'Sì. A oggi non sono note collisioni pratiche su SHA-256. È lo standard de facto per integrità e HMAC. SHA-3 (Keccak) è l\'alternativa moderna basata su un design diverso (sponge construction).' },
-      { q: 'Cosa distingue CMAC da HMAC?', a: 'HMAC si basa su una funzione hash (es. SHA-256); CMAC si basa su un cifrario a blocchi (es. AES). Entrambi forniscono autenticazione sicura, ma CMAC è preferito in contesti hardware dove AES è già disponibile.' },
-      { q: 'Un hash garantisce autenticità?', a: 'No. Un hash senza chiave dice solo che i dati non sono stati corrotti accidentalmente — non che provengano da una fonte fidata. Per autenticità serve un MAC (chiave condivisa) o una firma digitale (chiave pubblica).' },
-      { q: 'Cos\'è il birthday attack?', a: 'Sfrutta il paradosso del compleanno: per trovare una collisione su un hash di n bit bastano ≈2^(n/2) tentativi, non 2^n. Per SHA-256, la sicurezza contro collisioni è 128 bit, non 256.' }
-    ]
-  },
-  {
-    id: 'aead', label: 'AEAD', tag: 'Conf + integrità',
-    suggestions: [
-      'Perché è grave riutilizzare lo stesso nonce in AEAD?',
-      'Cosa sono i dati associati (AAD) in AES-GCM?',
-      'Perché si dice "verify-then-decrypt" per AEAD?'
-    ],
-    steps: [
-      {
-        type: 'intro',
-        html: `<div class="lesson-bubble"><strong>AEAD</strong> (Authenticated Encryption with Associated Data) combina confidenzialità e integrità in un unico primitivo. Esempi: AES-GCM, ChaCha20-Poly1305.</div>
-<div class="lesson-bubble analogy"><strong>Analogia 📦🔒</strong> Non è solo una cassaforte (confidenzialità) — è una cassaforte con sigillo antimanomissione (autenticazione). Se qualcuno tocca la cassaforte, il sigillo si rompe e lo sai.</div>`,
-        question: null
-      },
-      {
-        type: 'nonce',
-        html: `<div class="lesson-bubble"><strong>Il ruolo del nonce</strong><br>Il nonce (number used once) deve essere unico per ogni cifratura con la stessa chiave. In AES-GCM è tipicamente 96 bit. Non ha bisogno di essere segreto, ma non può mai ripetersi.</div>
-<div class="lesson-bubble warning"><strong>Nonce reuse = disastro ⚠️</strong> Riusare nonce + chiave rivela relazioni tra plaintexts e distrugge l'autenticità. Due ciphertext con lo stesso nonce: C1 ⊕ C2 = P1 ⊕ P2.</div>`,
-        question: {
-          text: 'Cosa succede se si riusa lo stesso nonce con la stessa chiave in AES-GCM?',
-          opts: ['Rallenta la cifratura', 'Espone la XOR dei plaintexts e rompe l\'autenticazione', 'Il tag diventa più lungo', 'Non succede nulla'],
-          correct: 1,
-          explanation: 'Il riuso di nonce in modalità stream-like (GCM) produce lo stesso keystream: XOR di due ciphertext dà la XOR dei plaintext. Inoltre il tag di autenticazione può essere falsificato.'
-        }
-      },
-      {
-        type: 'verify_first',
-        html: `<div class="lesson-bubble"><strong>Verify-then-decrypt</strong><br>La regola d'oro AEAD: verifica sempre il tag <em>prima</em> di usare il plaintext. Decifrare prima e verificare dopo espone a oracle attack (padding oracle, decryption oracle).</div>
-<div class="lesson-bubble fact"><strong>AAD (Associated Data)</strong> Dati autenticati ma non cifrati — es. header di rete. Garantisce che anche i metadati non vengano modificati, senza dover cifrare l'intero pacchetto.</div>`,
-        question: {
-          text: 'Qual è l\'ordine corretto nell\'elaborazione di un messaggio AEAD?',
-          opts: ['Decifra, poi verifica il tag', 'Verifica il tag, poi decifra', 'Cifra il tag, poi decifra', 'Ignora il tag se la chiave è lunga'],
-          correct: 1,
-          explanation: 'Bisogna sempre verificare il tag prima di rilasciare il plaintext. Decifrare prima apre la porta a oracle attack in cui l\'attaccante sfrutta i messaggi di errore per recuperare informazioni.'
-        }
-      },
-      {
-        type: 'summary',
-        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo AEAD ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Confidenzialità + integrità + autenticazione in un colpo</li><li>Nonce unico per ogni (chiave, messaggio) — mai riusare</li><li>Sempre verify-then-decrypt</li><li>Scelta moderna: AES-GCM o ChaCha20-Poly1305</li></ul></div>`,
-        question: null
-      }
-    ],
-    faqs: [
-      { q: 'Quando usare AES-GCM vs ChaCha20-Poly1305?', a: 'AES-GCM è preferibile su hardware con istruzioni AES-NI (praticamente tutti i PC e server moderni). ChaCha20-Poly1305 è ottimo su dispositivi embedded o mobile senza accelerazione hardware per AES.' },
-      { q: 'Il tag AEAD protegge anche i dati associati (AAD)?', a: 'Sì. Il tag copre sia il ciphertext che l\'AAD. Se qualcuno modifica anche solo un bit dell\'header (AAD), la verifica del tag fallirà.' },
-      { q: 'Cos\'è AES-SIV e quando si usa?', a: 'AES-SIV è uno schema AEAD misuse-resistant: anche con nonce ripetuto non rivela il plaintext (rivela solo se due messaggi sono identici). Si usa in contesti dove garantire l\'unicità del nonce è difficile.' },
-      { q: 'AEAD sostituisce completamente TLS?', a: 'No. AEAD risolve la primitive di cifratura autenticata, ma TLS si occupa anche di negoziazione algoritmi, scambio chiavi, autenticazione del server via certificati e molto altro.' }
+      { q: 'Perché MD5 e SHA-1 non sono più raccomandati?', a: 'Sono state trovate collisioni pratiche, che permettono di creare due messaggi diversi con lo stesso digest.' },
+      { q: 'Un hash garantisce segretezza?', a: 'No. Un hash è pubblico e reversibile solo in senso computazionale: serve per integrità e fingerprinting, non per cifratura.' },
+      { q: 'Quando usare MAC vs firma digitale?', a: 'Il MAC richiede che tutti i partecipanti condividano la stessa chiave segreta; la firma digitale usa chiavi pubbliche/privata e non richiede segreti condivisi.' },
+      { q: 'Che ruolo ha il sale nelle password hash?', a: 'Il sale impedisce attacchi con rainbow table e rende ogni hash di password unico, anche se la password è uguale.' }
     ]
   }
 ];
 
-const CT_STATE = {
+let CT_STATE = {
   topicIdx: 0,
   stepIdx: 0,
   answered: {},
   completed: {}
 };
 
-function ctTopic() { return CT_TOPICS[CT_STATE.topicIdx]; }
-function ctStep()  { return ctTopic().steps[CT_STATE.stepIdx]; }
-
-function renderCoteachSidebar() {
-  document.getElementById('coteachList').innerHTML = CT_TOPICS.map((t, i) => {
-    const done = CT_STATE.completed[t.id] || 0;
-    const total = t.steps.length;
-    const pct = Math.round(done / total * 100);
-    return `<button class="coteach-btn ${i === CT_STATE.topicIdx ? 'active' : ''}" data-ctidx="${i}">
-      <span>${t.label}</span>
-      <span class="badge ${pct === 100 ? 'success' : ''}">${pct}%</span>
-    </button>`;
-  }).join('');
-
-  document.getElementById('ctProgressSummary').innerHTML = CT_TOPICS.map(t => {
-    const done = CT_STATE.completed[t.id] || 0;
-    const total = t.steps.length;
-    return `<div style="font-size:var(--text-xs);display:flex;justify-content:space-between">
-      <span>${t.label}</span><span>${done}/${total} passi</span>
-    </div>`;
-  }).join('');
-}
-
-function renderAiSuggestions(topic) {
-  const container = document.getElementById('aiSuggestions');
-  const suggestions = topic.suggestions || [];
-  container.innerHTML = `<span class="label">Suggerimenti per <strong>${topic.label}</strong>:</span>`;
-  suggestions.forEach(text => {
-    const btn = document.createElement('button');
-    btn.className = 'ai-suggestion-btn';
-    btn.textContent = text;
-    btn.addEventListener('click', () => {
-      document.getElementById('aiInput').value = text;
-      document.getElementById('aiInput').focus();
-    });
-    container.appendChild(btn);
-  });
-}
-
-function renderCoteach() {
-  const topic = ctTopic();
-  const step  = ctStep();
-  const stepIdx   = CT_STATE.stepIdx;
-  const totalSteps = topic.steps.length;
-  const ansKey = `${topic.id}_${stepIdx}`;
-
-  document.getElementById('ctTopicTitle').textContent = topic.label;
-  document.getElementById('ctTopicTag').textContent   = topic.tag;
-  document.getElementById('ctStepLabel').textContent  = `Passo ${stepIdx + 1} / ${totalSteps}`;
-  document.getElementById('ctProgressBar').style.width = `${Math.round((stepIdx + 1) / totalSteps * 100)}%`;
-  document.getElementById('ctPrevBtn').disabled = stepIdx === 0;
-  document.getElementById('ctNextBtn').disabled = stepIdx === totalSteps - 1;
-
-  // Lesson content
-  let html = step.html;
-  if (step.question) {
-    const answered = CT_STATE.answered[ansKey];
-    html += `<div class="ct-question">
-      <p style="font-size:var(--text-sm);font-weight:600;margin-bottom:.5rem">✏️ ${step.question.text}</p>`;
-    html += step.question.opts.map((opt, i) => {
-      let cls = 'ct-opt';
-      if (answered !== undefined) {
-        if (i === step.question.correct) cls += ' ct-correct';
-        else if (i === answered && answered !== step.question.correct) cls += ' ct-wrong';
-      }
-      const disabled = answered !== undefined ? 'disabled' : '';
-      return `<button class="${cls}" data-ctopt="${i}" ${disabled}>${opt}</button>`;
-    }).join('');
-    if (answered !== undefined) {
-      html += `<div class="callout" style="margin-top:.5rem;font-size:var(--text-sm)">${step.question.explanation}</div>`;
-    }
-    html += `</div>`;
-  }
-  document.getElementById('ctLessonContent').innerHTML = html;
-
-  // FAQ
-  document.getElementById('ctFaqList').innerHTML = topic.faqs.map(f =>
-    `<details class="faq-item"><summary>${f.q}</summary><div class="faq-answer">${f.a}</div></details>`
-  ).join('');
-
-  // AI Tutor: update label + suggestions
-  document.getElementById('aiTopicLabel').textContent = topic.label;
-  renderAiSuggestions(topic);
-
-  // Notify AiTutor of topic change (if loaded)
-  if (typeof AiTutor !== 'undefined') {
-    AiTutor._currentTopic = topic.id; // soft-set; ask() will handle context injection
-  }
-
-  renderCoteachSidebar();
-}
-
-function ctMarkProgress() {
-  const topic = ctTopic();
-  if (!CT_STATE.completed[topic.id]) CT_STATE.completed[topic.id] = 0;
-  CT_STATE.completed[topic.id] = Math.max(CT_STATE.completed[topic.id], CT_STATE.stepIdx + 1);
-}
-
-document.getElementById('ctNextBtn').addEventListener('click', () => {
-  ctMarkProgress();
-  if (CT_STATE.stepIdx < ctTopic().steps.length - 1) { CT_STATE.stepIdx++; renderCoteach(); }
-});
-document.getElementById('ctPrevBtn').addEventListener('click', () => {
-  if (CT_STATE.stepIdx > 0) { CT_STATE.stepIdx--; renderCoteach(); }
-});
-document.getElementById('ctRestartBtn').addEventListener('click', () => {
-  CT_STATE.stepIdx = 0;
-  CT_STATE.answered = {};
-  renderCoteach();
-});
-document.getElementById('coteachList').addEventListener('click', e => {
-  const btn = e.target.closest('[data-ctidx]');
-  if (!btn) return;
-  CT_STATE.topicIdx = +btn.dataset.ctidx;
-  CT_STATE.stepIdx  = 0;
-  renderCoteach();
-});
-document.getElementById('ctLessonContent').addEventListener('click', e => {
-  const btn = e.target.closest('[data-ctopt]');
-  if (!btn) return;
-  const topic  = ctTopic();
-  const ansKey = `${topic.id}_${CT_STATE.stepIdx}`;
-  if (CT_STATE.answered[ansKey] !== undefined) return;
-  CT_STATE.answered[ansKey] = +btn.dataset.ctopt;
-  ctMarkProgress();
-  renderCoteach();
-});
-
-// Init co-teaching on first open
-renderCoteach();
-
-// ── AI Tutor wiring ──────────────────────────────────────────────────────────
-(function () {
-  const loadBtn      = document.getElementById('ai-tutor-load-btn');
-  const resetBtn     = document.getElementById('ai-tutor-reset-btn');
-  const progressText = document.getElementById('aiProgressText');
-  const progressTrack= document.getElementById('aiProgressTrack');
-  const progressFill = document.getElementById('aiProgressFill');
-  const messagesEl   = document.getElementById('aiMessages');
-  const form         = document.getElementById('aiForm');
-  const input        = document.getElementById('aiInput');
-  const submitBtn    = document.getElementById('aiSubmitBtn');
-
-  function setProgress(pct, text) {
-    progressText.textContent = text || '';
-    if (pct < 0) {
-      progressText.style.color = 'var(--danger)';
-      progressTrack.style.display = 'none';
-      return;
-    }
-    progressText.style.color = '';
-    if (pct > 0 && pct < 100) {
-      progressTrack.style.display = 'block';
-      progressFill.style.width = pct + '%';
-    } else if (pct === 100) {
-      progressTrack.style.display = 'none';
-      progressFill.style.width = '100%';
-      submitBtn.disabled = false;
-      loadBtn.disabled = true;
-      loadBtn.textContent = '✓ Modello pronto';
-    }
-  }
-
-  AiTutor.onProgress(({ progress, text }) => setProgress(progress, text));
-
-  loadBtn.addEventListener('click', async () => {
-    if (AiTutor.isReady() || AiTutor.isLoading()) return;
-    loadBtn.disabled = true;
-    setProgress(0, 'Avvio download modello (~2.2 GB)…');
-    try {
-      await AiTutor.init();
-    } catch (err) {
-      loadBtn.disabled = false;
-      setProgress(-1, 'Errore: ' + err.message);
-    }
-  });
-
-  resetBtn.addEventListener('click', () => {
-    AiTutor.reset();
-    messagesEl.innerHTML = '';
-  });
-
-  function appendMessage(role, text, streaming) {
-    const div = document.createElement('div');
-    div.className = 'ai-msg ' + role + (streaming ? ' streaming' : '');
-    div.textContent = text;
-    messagesEl.appendChild(div);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-    return div;
-  }
-
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    const msg = input.value.trim();
-    if (!msg) return;
-    if (!AiTutor.isReady()) {
-      setProgress(-1, 'Carica prima il modello con il pulsante qui sopra.');
-      return;
-    }
-
-    const topicId = ctTopic().id;
-    input.value = '';
-    submitBtn.disabled = true;
-
-    appendMessage('user', msg, false);
-    const bubble = appendMessage('assistant', '', true);
-
-    try {
-      let full = '';
-      for await (const chunk of AiTutor.ask(msg, topicId)) {
-        full += chunk;
-        bubble.textContent = full;
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      }
-      bubble.classList.remove('streaming');
-    } catch (err) {
-      bubble.textContent = 'Errore: ' + err.message;
-      bubble.classList.remove('streaming');
-    } finally {
-      submitBtn.disabled = false;
-      input.focus();
-    }
-  });
-})();
 </script>
+<script src="ai_tutor.js"></script>
 </body>
 </html>
