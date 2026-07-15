@@ -1,0 +1,21 @@
+<!-- AI Tutor panel -->
+<section id="ai-tutor" aria-labelledby="ai-tutor-title">
+  <header class="ai-tutor-header">
+    <h2 id="ai-tutor-title">🤖 AI Tutor</h2>
+    <button id="ai-tutor-load-btn" type="button">Carica modello AI</button>
+    <div id="ai-tutor-progress" aria-live="polite"></div>
+  </header>
+
+  <div class="ai-tutor-suggestions">
+    <span class="label">Suggerimenti per <span id="ai-tutor-topic-label">cryptography</span>:</span>
+    <div id="ai-tutor-suggestion-list"></div>
+  </div>
+
+  <div class="ai-tutor-chat">
+    <div id="ai-tutor-messages" aria-live="polite"></div>
+    <form id="ai-tutor-form">
+      <input id="ai-tutor-input" type="text" placeholder="Scrivi una domanda…" autocomplete="off" />
+      <button type="submit">Chiedi</button>
+    </form>
+  </div>
+</section>
