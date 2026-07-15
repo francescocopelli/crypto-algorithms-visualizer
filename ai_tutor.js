@@ -53,6 +53,18 @@ Massimo 3-4 frasi per risposta, salvo che lo studente chieda una spiegazione app
     return `${SYSTEM_BASE}\n\nContesto attuale: ${ctx}`;
   }
 
+  // ── Attempt engine creation with a given cacheBackend ────────────────────
+  async function _tryCreateEngine(modelId, cacheBackend, prebuiltAppConfig, CreateMLCEngine) {
+    const appConfig = { ...prebuiltAppConfig, cacheBackend };
+    return CreateMLCEngine(modelId, {
+      appConfig,
+      initProgressCallback: (report) => {
+        const pct = Math.round((report.progress || 0) * 100);
+        _reportProgress(pct, report.text || `Caricamento modello: ${pct}%`);
+      }
+    });
+  }
+
   // ── Init / load model ──────────────────────────────────────────────────────
   async function init(modelId) {
     if (_ready || _loading) return;
@@ -60,28 +72,37 @@ Massimo 3-4 frasi per risposta, salvo che lo studente chieda una spiegazione app
     modelId = modelId || DEFAULT_MODEL;
 
     try {
-      // web-llm is loaded as ES module via <script type="module"> in index.html
-      // It attaches itself to globalThis.webllm
       if (!global.webllm) {
         throw new Error('WebLLM non trovato. Assicurati che lo script CDN sia caricato.');
       }
-      const { CreateMLCEngine } = global.webllm;
+      const { CreateMLCEngine, prebuiltAppConfig } = global.webllm;
 
       _reportProgress(0, 'Inizializzazione motore AI...');
 
-      _engine = await CreateMLCEngine(modelId, {
-        initProgressCallback: (report) => {
-          const pct = Math.round((report.progress || 0) * 100);
-          _reportProgress(pct, report.text || `Caricamento modello: ${pct}%`);
+      // Try IndexedDB first (more stable for large binary shards),
+      // fall back to browser Cache API if IndexedDB fails.
+      try {
+        _engine = await _tryCreateEngine(modelId, 'indexeddb', prebuiltAppConfig, CreateMLCEngine);
+      } catch (idbErr) {
+        console.warn('[AiTutor] IndexedDB cache failed, retrying with Cache API:', idbErr.message);
+        _reportProgress(0, 'Retry con Cache API...');
+        try {
+          _engine = await _tryCreateEngine(modelId, 'cache', prebuiltAppConfig, CreateMLCEngine);
+        } catch (cacheErr) {
+          throw new Error(
+            'Caricamento modello fallito con entrambi i backend cache. ' +
+            'Prova a liberare spazio nel browser o usa Chrome/Edge aggiornato. ' +
+            `(${cacheErr.message})`
+          );
         }
-      });
+      }
 
       _ready = true;
       _loading = false;
       _reportProgress(100, 'Modello pronto ✓');
     } catch (err) {
       _loading = false;
-      _reportProgress(-1, `Errore: ${err.message}`);
+      _reportProgress(-1, `Errore AI Tutor: ${err.message}`);
       throw err;
     }
   }
