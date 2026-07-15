@@ -93,7 +93,9 @@
     .progress>span{display:block;height:100%;background:linear-gradient(90deg,var(--color-primary),var(--color-blue));width:0%;transition:width .3s}
     .footer{padding:2rem 0 4rem;color:var(--color-text-muted)}
     .footer-card{padding:1.25rem;border-radius:var(--radius-xl);background:var(--color-surface);border:1px solid var(--color-border)}
-    @media(max-width:1080px){.hero,.workspace,.output-grid,.quiz-layout,.two-col,.attack-grid,.examples-grid,.teacher-grid,.grid-2,.kpi-row{grid-template-columns:1fr}.sidebar{position:static}}
+    .exam-sheet-grid{grid-template-columns:1fr 1fr 1fr}
+    @media(max-width:1080px){.hero,.workspace,.output-grid,.quiz-layout,.two-col,.attack-grid,.examples-grid,.teacher-grid,.exam-sheet-grid,.grid-2,.kpi-row{grid-template-columns:1fr}.sidebar{position:static}}
+    @media(min-width:721px) and (max-width:1200px){.exam-sheet-grid{grid-template-columns:1fr 1fr}}
     @media(max-width:720px){.hero-copy,.hero-stats,.panel,.card,.attack-card,.example-card,.teacher-panel,.quiz-card,.sidebar{padding:1rem}.nav{overflow-x:auto;flex-wrap:nowrap;width:100%}}
   </style>
 </head>
@@ -115,6 +117,7 @@
         <a href="#attack-lab">Attack Lab</a>
         <a href="#guided-examples">Examples</a>
         <a href="#quiz-mode">Quiz</a>
+        <a href="#exam-sheet">Exam Sheet</a>
         <a href="#teacher-mode">Teacher</a>
       </nav>
       <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">
@@ -146,9 +149,11 @@
   <section id="visualizer">
     <div class="section-head">
       <div><h3>Algorithm visualizer</h3><p>Switch between DES, AES, RSA, Diffie-Hellman, ElGamal, hashes, MACs, authenticated encryption and ECC.</p></div>
-      <div style="display:flex;gap:.5rem">
+      <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <span class="badge primary" id="modeIndicator">Mode: Student</span>
         <button class="btn btn-secondary" id="modeStudent">Student</button>
         <button class="btn btn-primary" id="modeTeacher">Teacher</button>
+        <button class="btn btn-secondary" id="modeExercise">Exercise mode</button>
       </div>
     </div>
     <div class="workspace">
@@ -163,23 +168,40 @@
             <div class="field"><label for="algoInput">Input</label><input id="algoInput" class="mono"/><p class="helper" id="inputHelper"></p></div>
             <div class="field"><label for="algoKey">Key / parameter</label><input id="algoKey" class="mono"/><p class="helper" id="keyHelper"></p></div>
           </div>
-          <div class="hero-actions" style="margin-top:1rem">
-            <button class="btn btn-secondary" id="prevStepBtn">&#8592; Previous</button>
-            <button class="btn btn-primary" id="nextStepBtn">Next &#8594;</button>
-            <button class="btn btn-secondary" id="resetStepBtn">Reset</button>
-          </div>
-          <div class="output-grid">
-            <div class="card"><h4>Execution timeline</h4><div class="timeline" id="timeline"></div></div>
-            <div class="card">
-              <h4>State snapshot</h4>
-              <div class="kpi-row">
-                <div class="kpi"><span>Step</span><strong id="currentStepIdx"></strong></div>
-                <div class="kpi"><span>Goal</span><strong id="securityGoal"></strong></div>
-                <div class="kpi"><span>Bit width</span><strong id="bitWidth"></strong></div>
-                <div class="kpi"><span>Model</span><strong id="algoModel"></strong></div>
+          <div id="normalPanel">
+            <div class="hero-actions" style="margin-top:1rem">
+              <button class="btn btn-secondary" id="prevStepBtn">&#8592; Previous</button>
+              <button class="btn btn-primary" id="nextStepBtn">Next &#8594;</button>
+              <button class="btn btn-secondary" id="resetStepBtn">Reset</button>
+            </div>
+            <div class="output-grid">
+              <div class="card"><h4>Execution timeline</h4><div class="timeline" id="timeline"></div></div>
+              <div class="card">
+                <h4>State snapshot</h4>
+                <div class="kpi-row">
+                  <div class="kpi"><span>Step</span><strong id="currentStepIdx"></strong></div>
+                  <div class="kpi"><span>Goal</span><strong id="securityGoal"></strong></div>
+                  <div class="kpi"><span>Bit width</span><strong id="bitWidth"></strong></div>
+                  <div class="kpi"><span>Model</span><strong id="algoModel"></strong></div>
+                </div>
+                <div class="matrix" id="matrixView"></div>
+                <div class="callout" id="teacherCallout" style="margin-top:1rem;font-size:var(--text-sm)"></div>
               </div>
-              <div class="matrix" id="matrixView"></div>
-              <div class="callout" id="teacherCallout" style="margin-top:1rem;font-size:var(--text-sm)"></div>
+            </div>
+          </div>
+          <div id="exercisePanel" style="display:none;margin-top:1rem">
+            <div id="exerciseUnsupported" class="callout" style="font-size:var(--text-sm)">
+              La modalità esercizio con calcolo reale è disponibile per <strong>RSA</strong> e <strong>Diffie-Hellman</strong>. Seleziona uno di questi due algoritmi dalla lista a sinistra.
+            </div>
+            <div id="exerciseBody">
+              <h4 id="exerciseTitle"></h4>
+              <p id="exerciseGoal" style="color:var(--color-text-muted);font-size:var(--text-sm);margin:.5rem 0 1rem"></p>
+              <div class="card"><h4>Parametri dell'esercizio</h4><div class="grid-2" id="exerciseParams" style="margin-top:.75rem"></div></div>
+              <div class="card" style="margin-top:1rem"><h4>I tuoi risultati</h4><div class="stack" id="exerciseFields" style="margin-top:.75rem"></div></div>
+              <div class="hero-actions" style="margin-top:1rem">
+                <button class="btn btn-primary" id="exerciseCheckBtn">Verifica</button>
+              </div>
+              <div class="card" id="exerciseResults" style="margin-top:1rem"></div>
             </div>
           </div>
         </article>
@@ -229,12 +251,22 @@
   </section>
 
   <section id="quiz-mode">
-    <div class="section-head"><div><h3>Quiz mode</h3><p>Mixed questions on block ciphers, public-key primitives, authentication and attacks. Immediate feedback.</p></div></div>
+    <div class="section-head">
+      <div><h3>Quiz mode</h3><p>Mixed questions on block ciphers, public-key primitives, authentication and attacks. Immediate feedback.</p></div>
+      <div class="field" style="min-width:220px">
+        <label for="quizCategoryFilter">Category</label>
+        <select id="quizCategoryFilter" class="mono"></select>
+      </div>
+    </div>
+    <div id="quizCompletionMsg" class="callout" style="display:none;margin-bottom:1rem;font-size:var(--text-sm)"></div>
     <div class="quiz-layout">
       <article class="quiz-card">
         <div class="section-head" style="margin-bottom:.75rem">
           <div><h4 id="quizQuestionTitle"></h4><p id="quizQuestionText" style="color:var(--color-text-muted);font-size:var(--text-sm)"></p></div>
-          <span class="badge primary" id="quizCategory"></span>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <span class="badge warn" id="quizTimer">0s</span>
+            <span class="badge primary" id="quizCategory"></span>
+          </div>
         </div>
         <div class="progress"><span id="quizProgress"></span></div>
         <div class="quiz-options" id="quizOptions"></div>
@@ -255,6 +287,11 @@
         <div class="callout" id="quizExplanation" style="margin-top:1rem;font-size:var(--text-sm)">Select an answer to reveal the explanation.</div>
       </aside>
     </div>
+  </section>
+
+  <section id="exam-sheet">
+    <div class="section-head"><div><h3>Exam sheet</h3><p>Riassunto rapido per algoritmo: proprietà di sicurezza, uso tipico, minacce note e versione sicura consigliata.</p></div></div>
+    <div class="teacher-grid exam-sheet-grid" id="examSheetGrid"></div>
   </section>
 
   <section id="teacher-mode">

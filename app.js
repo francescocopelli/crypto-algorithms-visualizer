@@ -301,6 +301,152 @@ const TEACHER = [
   { title: 'AEAD', summary: 'Use AEAD to show that confidentiality and integrity should be designed together, not bolted on.', analogy: 'Not just a locked box — a locked and tamper-evident box where breaking the seal is immediately obvious.', warning: 'Nonce reuse must be framed as a system-level engineering failure, not a minor detail.' }
 ];
 
+// ── Crypto engine (real computation, used by Exercise mode & worked examples) ─
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; }
+
+// Extended Euclidean Algorithm with full step trace (exam-style table).
+function extendedGCD(a, b) {
+  let old_r = a, r = b, old_x = 1, x = 0, old_y = 0, y = 1;
+  const table = [];
+  while (r !== 0) {
+    const q = Math.floor(old_r / r);
+    const rem = old_r - q * r;
+    table.push({ q, a: old_r, b: r, rem, eq: `${old_r} = ${q}·${r} + ${rem}` });
+    [old_r, r] = [r, rem];
+    [old_x, x] = [x, old_x - q * x];
+    [old_y, y] = [y, old_y - q * y];
+  }
+  return { gcd: old_r, x: old_x, y: old_y, table };
+}
+
+// Fast modular exponentiation (square-and-multiply).
+function modpow(base, exp, mod) {
+  if (mod === 1) return 0;
+  base = ((base % mod) + mod) % mod;
+  let result = 1;
+  while (exp > 0) {
+    if (exp % 2 === 1) result = (result * base) % mod;
+    exp = Math.floor(exp / 2);
+    base = (base * base) % mod;
+  }
+  return result;
+}
+
+// Full RSA pipeline computed for real from p, q, e, m.
+function computeRSA(p, q, e, m) {
+  const n = p * q;
+  const phi = (p - 1) * (q - 1);
+  if (gcd(e, phi) !== 1) return { error: `gcd(e, φ(n)) = ${gcd(e, phi)} ≠ 1: e non è invertibile mod φ(n).` };
+  const eg = extendedGCD(e, phi);
+  const d = ((eg.x % phi) + phi) % phi;
+  const c = modpow(m, e, n);
+  const decrypted = modpow(c, d, n);
+  return { p, q, e, m, n, phi, d, c, decrypted, eg };
+}
+
+// Full Diffie-Hellman exchange computed for real from p, g, a, b.
+function computeDH(p, g, a, b) {
+  const A = modpow(g, a, p);
+  const B = modpow(g, b, p);
+  const kAlice = modpow(B, a, p);
+  const kBob = modpow(A, b, p);
+  return { p, g, a, b, A, B, kAlice, kBob, match: kAlice === kBob };
+}
+
+// ── Exercise mode data ──────────────────────────────────────────────────────
+const EXERCISES = {
+  rsa: {
+    title: 'RSA — genera le chiavi e cifra/decifra',
+    goal: 'Dati p, q ed e, calcola n, φ(n), l\u2019esponente privato d (con l\u2019algoritmo esteso di Euclide), il cifrato c e il messaggio decifrato.',
+    params: [
+      { id: 'p', label: 'p (primo)', default: 61 },
+      { id: 'q', label: 'q (primo)', default: 53 },
+      { id: 'e', label: 'e (esponente pubblico)', default: 17 },
+      { id: 'm', label: 'm (messaggio, m < n)', default: 42 }
+    ],
+    fields: [
+      { id: 'n', label: 'n = p · q' },
+      { id: 'phi', label: 'φ(n) = (p−1)(q−1)' },
+      { id: 'd', label: 'd, tale che e·d ≡ 1 (mod φ(n))' },
+      { id: 'c', label: 'c = mᵉ mod n' },
+      { id: 'decrypted', label: 'm = cᵈ mod n (verifica)' }
+    ],
+    run: (p) => computeRSA(+p.p, +p.q, +p.e, +p.m),
+    trace: (r) => {
+      if (r.error) return [`<strong>Errore:</strong> ${r.error}`];
+      const steps = [
+        `n = p·q = ${r.p}·${r.q} = <strong>${r.n}</strong>`,
+        `φ(n) = (p−1)(q−1) = ${r.p - 1}·${r.q - 1} = <strong>${r.phi}</strong>`,
+        `Algoritmo esteso di Euclide su (e, φ(n)) = (${r.e}, ${r.phi}):`,
+        ...r.eg.table.map(t => `&emsp;${t.eq}`),
+        `&emsp;gcd = ${r.eg.gcd}, coefficiente di Bézout x = ${r.eg.x} → d = x mod φ(n) = <strong>${r.d}</strong>`,
+        `Verifica: e·d mod φ(n) = ${r.e}·${r.d} mod ${r.phi} = ${(r.e * r.d) % r.phi}`,
+        `Cifratura: c = mᵉ mod n = ${r.m}^${r.e} mod ${r.n} = <strong>${r.c}</strong>`,
+        `Decifratura: m = cᵈ mod n = ${r.c}^${r.d} mod ${r.n} = <strong>${r.decrypted}</strong>`
+      ];
+      return steps;
+    }
+  },
+  dh: {
+    title: 'Diffie–Hellman — deriva il segreto condiviso',
+    goal: 'Dati p, g, a (segreto di Alice) e b (segreto di Bob), calcola A, B e il segreto condiviso K su entrambi i lati.',
+    params: [
+      { id: 'p', label: 'p (primo)', default: 23 },
+      { id: 'g', label: 'g (generatore)', default: 5 },
+      { id: 'a', label: 'a (segreto Alice)', default: 6 },
+      { id: 'b', label: 'b (segreto Bob)', default: 15 }
+    ],
+    fields: [
+      { id: 'A', label: 'A = gᵃ mod p' },
+      { id: 'B', label: 'B = gᵇ mod p' },
+      { id: 'kAlice', label: 'K = Bᵃ mod p (calcolato da Alice)' },
+      { id: 'kBob', label: 'K = Aᵇ mod p (calcolato da Bob)' }
+    ],
+    run: (p) => computeDH(+p.p, +p.g, +p.a, +p.b),
+    trace: (r) => [
+      `A = gᵃ mod p = ${r.g}^${r.a} mod ${r.p} = <strong>${r.A}</strong>`,
+      `B = gᵇ mod p = ${r.g}^${r.b} mod ${r.p} = <strong>${r.B}</strong>`,
+      `Alice calcola: K = Bᵃ mod p = ${r.B}^${r.a} mod ${r.p} = <strong>${r.kAlice}</strong>`,
+      `Bob calcola: K = Aᵇ mod p = ${r.A}^${r.b} mod ${r.p} = <strong>${r.kBob}</strong>`,
+      r.match ? `I due segreti coincidono: K = <strong>${r.kAlice}</strong> ✓` : `Attenzione: i segreti non coincidono, controlla i parametri.`
+    ]
+  }
+};
+
+// ── Exam sheet / cheat-sheet data ───────────────────────────────────────────
+const EXAM_SHEET = [
+  { id: 'aes', name: 'AES', confidentiality: 'Sì (in una modalità adeguata)', integrity: 'No da sola', authentication: 'No', nonRepudiation: 'No', use: 'Cifratura simmetrica di dati a riposo e in transito (es. TLS con AES-GCM, dischi cifrati).', threat: 'ECB rivela pattern del plaintext; riuso di IV/nonce in CBC/CTR.', secure: 'Usare AES-GCM o AES-CTR+HMAC; mai ECB per dati strutturati.' },
+  { id: 'des', name: 'DES', confidentiality: 'Debole (chiave da 56 bit)', integrity: 'No', authentication: 'No', nonRepudiation: 'No', use: 'Solo storico/didattico; 3DES ancora in legacy systems.', threat: 'Ricerca esaustiva della chiave in tempi pratici con hardware dedicato.', secure: 'Migrare ad AES-128/256; evitare DES/3DES in nuovi sistemi.' },
+  { id: 'rsa', name: 'RSA', confidentiality: 'Sì (con OAEP)', integrity: 'No da sola', authentication: 'Sì se usata per firma', nonRepudiation: 'Sì (firma RSA)', use: 'Trasporto di chiavi, firme digitali (RSA-PSS), certificati X.509.', threat: 'Textbook RSA è deterministica; chiavi corte fattorizzabili.', secure: 'OAEP per la cifratura, PSS per la firma, n ≥ 2048 bit.' },
+  { id: 'dh', name: 'Diffie-Hellman', confidentiality: 'No (serve poi cifrare col segreto derivato)', integrity: 'No', authentication: 'No (vulnerabile a MITM)', nonRepudiation: 'No', use: 'Key exchange per stabilire un segreto condiviso (TLS, IPsec).', threat: 'Man-in-the-middle se i valori pubblici non sono autenticati.', secure: 'Autenticare lo scambio (firme/certificati) o usare protocolli come TLS/STS.' },
+  { id: 'elgamal', name: 'ElGamal', confidentiality: 'Sì (randomizzata)', integrity: 'No', authentication: 'No', nonRepudiation: 'No', use: 'Cifratura a chiave pubblica; base concettuale per DSA.', threat: 'Riuso del valore effimero k espone la chiave privata.', secure: 'k casuale e mai riutilizzato per ogni cifratura.' },
+  { id: 'hash', name: 'Hash functions', confidentiality: 'No', integrity: 'Sì (fingerprint, non contro un attaccante attivo senza chiave)', authentication: 'No', nonRepudiation: 'No', use: 'Verifica di integrità, commitment, base per HMAC e firme.', threat: 'Collisioni su algoritmi deboli (MD5, SHA-1).', secure: 'Usare SHA-256/SHA-3 o famiglie moderne.' },
+  { id: 'mac', name: 'MAC / HMAC / CMAC', confidentiality: 'No', integrity: 'Sì', authentication: 'Sì (con chiave condivisa)', nonRepudiation: 'No', use: 'Autenticazione di messaggi in protocolli simmetrici.', threat: 'Length-extension su costruzioni hash "naive" (chiave||messaggio) senza HMAC.', secure: 'Usare la costruzione HMAC standard o CMAC su cifrario a blocco.' },
+  { id: 'ae', name: 'Authenticated Encryption', confidentiality: 'Sì', integrity: 'Sì', authentication: 'Sì', nonRepudiation: 'No', use: 'Protocolli moderni: TLS 1.3 (AES-GCM, ChaCha20-Poly1305).', threat: 'Riuso del nonce; decifrare prima di verificare il tag (oracle).', secure: 'Nonce univoco per chiave; verificare il tag prima di rilasciare il plaintext.' },
+  { id: 'ecc', name: 'ECC / ECDH', confidentiality: 'Sì (ECIES)', integrity: 'No da sola', authentication: 'Sì (ECDSA/EdDSA)', nonRepudiation: 'Sì (ECDSA/EdDSA)', use: 'TLS moderno, firme, scambio chiavi su dispositivi con risorse limitate.', threat: 'Curve non standard o deboli; RNG scarsa nelle firme.', secure: 'Curve standard (P-256, Curve25519); nonce deterministico (RFC 6979) o EdDSA.' }
+];
+
+// ── Persistence (localStorage) ──────────────────────────────────────────────
+const STORAGE_KEY = 'cav_state_v1';
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      theme: document.documentElement.getAttribute('data-theme'),
+      currentAlgo: S.currentAlgo,
+      quizAnswers: S.quizAnswers,
+      quizIndex: S.quizIndex,
+      quizCategory: S.quizCategory
+    }));
+  } catch (err) { /* localStorage unavailable — ignore */ }
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (err) { return null; }
+}
+
 // ── State ────────────────────────────────────────────────────────────────────
 const S = {
   currentAlgo: 0,
@@ -308,8 +454,13 @@ const S = {
   currentAttack: 0,
   currentExample: 0,
   mode: 'student',
+  exerciseMode: false,
   quizIndex: 0,
-  quizAnswers: Array(QUIZ.length).fill(null)
+  quizAnswers: Array(QUIZ.length).fill(null),
+  quizCategory: 'All',
+  quizTimes: Array(QUIZ.length).fill(0),
+  quizQuestionStart: Date.now(),
+  quizSessionStart: Date.now()
 };
 
 // ── Render helpers ───────────────────────────────────────────────────────────
@@ -389,13 +540,111 @@ function renderExample() {
   document.getElementById('exampleMistake').textContent = e.mistake;
 }
 
+function renderExercise() {
+  const panel = document.getElementById('exercisePanel');
+  const normal = document.getElementById('normalPanel');
+  if (!S.exerciseMode) { panel.style.display = 'none'; normal.style.display = ''; return; }
+  panel.style.display = ''; normal.style.display = 'none';
+
+  const algoId = ALGORITHMS[S.currentAlgo].id;
+  const ex = EXERCISES[algoId];
+  const unsupported = document.getElementById('exerciseUnsupported');
+  const body = document.getElementById('exerciseBody');
+  if (!ex) {
+    unsupported.style.display = '';
+    body.style.display = 'none';
+    return;
+  }
+  unsupported.style.display = 'none';
+  body.style.display = '';
+
+  document.getElementById('exerciseTitle').textContent = ex.title;
+  document.getElementById('exerciseGoal').textContent = ex.goal;
+
+  if (!S.exerciseParams || S.exerciseParamsAlgo !== algoId) {
+    S.exerciseParams = {};
+    ex.params.forEach(p => { S.exerciseParams[p.id] = p.default; });
+    S.exerciseParamsAlgo = algoId;
+    S.exerciseAnswers = {};
+    S.exerciseChecked = false;
+  }
+
+  document.getElementById('exerciseParams').innerHTML = ex.params.map(p =>
+    `<div class="field"><label for="exparam-${p.id}">${p.label}</label>
+      <input class="mono" id="exparam-${p.id}" data-exparam="${p.id}" value="${S.exerciseParams[p.id]}" inputmode="numeric"/></div>`
+  ).join('');
+
+  document.getElementById('exerciseFields').innerHTML = ex.fields.map(f => {
+    const val = S.exerciseAnswers[f.id] ?? '';
+    let cls = 'field';
+    let feedback = '';
+    if (S.exerciseChecked && S.exerciseResult && !S.exerciseResult.error) {
+      const correctVal = String(S.exerciseResult[f.id]);
+      const ok = String(val).trim() === correctVal;
+      feedback = `<span class="badge ${ok ? 'success' : 'warn'}" style="margin-left:.5rem">${ok ? 'Corretto' : 'Da rivedere'}</span>`;
+    }
+    return `<div class="${cls}"><label for="exfield-${f.id}">${f.label} ${feedback}</label>
+      <input class="mono" id="exfield-${f.id}" data-exfield="${f.id}" value="${val}" placeholder="il tuo risultato"/></div>`;
+  }).join('');
+
+  const resultsEl = document.getElementById('exerciseResults');
+  if (S.exerciseChecked && S.exerciseResult) {
+    const r = S.exerciseResult;
+    const trace = ex.trace(r);
+    resultsEl.innerHTML = `<h4>Procedimento completo</h4><div class="timeline">${
+      trace.map((s, i) => `<div class="step"><strong>Passo ${i + 1}</strong><p style="font-size:var(--text-sm)">${s}</p></div>`).join('')
+    }</div>`;
+  } else {
+    resultsEl.innerHTML = '<p class="helper">Inserisci i tuoi valori e premi "Verifica" per vedere tutti i passaggi del procedimento corretto.</p>';
+  }
+}
+
+function renderExamSheet() {
+  document.getElementById('examSheetGrid').innerHTML = EXAM_SHEET.map(x => `
+    <article class="teacher-panel">
+      <h4>${x.name}</h4>
+      <div class="kpi-row" style="grid-template-columns:1fr 1fr;margin-top:.5rem">
+        <div class="kpi"><span>Confidenzialità</span><strong style="font-size:var(--text-sm)">${x.confidentiality}</strong></div>
+        <div class="kpi"><span>Integrità</span><strong style="font-size:var(--text-sm)">${x.integrity}</strong></div>
+        <div class="kpi"><span>Autenticazione</span><strong style="font-size:var(--text-sm)">${x.authentication}</strong></div>
+        <div class="kpi"><span>Non ripudio</span><strong style="font-size:var(--text-sm)">${x.nonRepudiation}</strong></div>
+      </div>
+      <div class="card" style="margin-top:.75rem"><h4>Uso tipico</h4><p style="font-size:var(--text-sm)">${x.use}</p></div>
+      <div class="card" style="margin-top:.75rem"><h4>Minaccia tipica</h4><p style="font-size:var(--text-sm)">${x.threat}</p></div>
+      <div class="callout" style="margin-top:.75rem;font-size:var(--text-sm)"><strong>Versione sicura:</strong> ${x.secure}</div>
+    </article>
+  `).join('');
+}
+
+function getFilteredQuizIndices() {
+  if (S.quizCategory === 'All') return QUIZ.map((_, i) => i);
+  return QUIZ.map((_, i) => i).filter(i => QUIZ[i].category === S.quizCategory);
+}
+
+function formatSeconds(s) {
+  const m = Math.floor(s / 60), r = s % 60;
+  return m > 0 ? `${m}m ${r}s` : `${r}s`;
+}
+
 function renderQuiz() {
-  const q = QUIZ[S.quizIndex];
-  const ans = S.quizAnswers[S.quizIndex];
-  document.getElementById('quizQuestionTitle').textContent = `Question ${S.quizIndex + 1}`;
+  const indices = getFilteredQuizIndices();
+  if (S.quizIndex >= indices.length) S.quizIndex = Math.max(0, indices.length - 1);
+  const realIdx = indices[S.quizIndex];
+  const q = QUIZ[realIdx];
+  const ans = S.quizAnswers[realIdx];
+
+  const catSelect = document.getElementById('quizCategoryFilter');
+  if (catSelect && catSelect.dataset.built !== '1') {
+    const cats = ['All', ...new Set(QUIZ.map(x => x.category))];
+    catSelect.innerHTML = cats.map(c => `<option value="${c}">${c === 'All' ? 'Tutte le categorie' : c}</option>`).join('');
+    catSelect.dataset.built = '1';
+  }
+  if (catSelect) catSelect.value = S.quizCategory;
+
+  document.getElementById('quizQuestionTitle').textContent = `Question ${S.quizIndex + 1} / ${indices.length}`;
   document.getElementById('quizQuestionText').textContent = q.q;
   document.getElementById('quizCategory').textContent = q.category;
-  document.getElementById('quizProgress').style.width = `${((S.quizIndex + 1) / QUIZ.length) * 100}%`;
+  document.getElementById('quizProgress').style.width = `${((S.quizIndex + 1) / indices.length) * 100}%`;
   document.getElementById('quizOptions').innerHTML = q.opts.map((o, i) => {
     let cls = 'quiz-option';
     if (ans !== null) {
@@ -404,6 +653,7 @@ function renderQuiz() {
     }
     return `<button class="${cls}" data-opt="${i}">${String.fromCharCode(65 + i)}. ${o}</button>`;
   }).join('');
+
   const answered = S.quizAnswers.filter(v => v !== null).length;
   const correct = S.quizAnswers.reduce((acc, v, i) => acc + (v === QUIZ[i].correct ? 1 : 0), 0);
   document.getElementById('quizAnswered').textContent = answered;
@@ -412,12 +662,42 @@ function renderQuiz() {
   document.getElementById('quizExplanation').innerHTML = ans === null
     ? 'Select an answer to reveal the explanation.'
     : `<strong>${ans === q.correct ? 'Correct ✓' : 'Review ✗'}</strong> ${q.ex}`;
+
+  const timerEl = document.getElementById('quizTimer');
+  if (timerEl) timerEl.textContent = formatSeconds(Math.floor((Date.now() - S.quizQuestionStart) / 1000));
+
+  const completionEl = document.getElementById('quizCompletionMsg');
+  const allAnswered = indices.every(i => S.quizAnswers[i] !== null);
+  if (allAnswered && completionEl) {
+    const byCat = {};
+    QUIZ.forEach((qq, i) => {
+      if (!indices.includes(i)) return;
+      byCat[qq.category] = byCat[qq.category] || { total: 0, correct: 0 };
+      byCat[qq.category].total++;
+      if (S.quizAnswers[i] === qq.correct) byCat[qq.category].correct++;
+    });
+    const weak = Object.entries(byCat).filter(([, v]) => v.correct / v.total < 0.7).map(([c]) => c);
+    const totalTime = Math.floor((Date.now() - S.quizSessionStart) / 1000);
+    completionEl.style.display = '';
+    completionEl.innerHTML = `<strong>Quiz completo ✓</strong> Tempo totale: ${formatSeconds(totalTime)}. ${
+      weak.length ? `Categorie da ripassare: <strong>${weak.join(', ')}</strong>.` : 'Ottimo lavoro su tutte le categorie!'
+    }`;
+  } else if (completionEl) {
+    completionEl.style.display = 'none';
+  }
+}
+
+function updateModeIndicator() {
+  const el = document.getElementById('modeIndicator');
+  if (!el) return;
+  const label = S.exerciseMode ? 'Exercise' : (S.mode === 'teacher' ? 'Teacher' : 'Student');
+  el.textContent = `Mode: ${label}`;
 }
 
 // ── Event delegation ─────────────────────────────────────────────────────────
 document.addEventListener('click', e => {
   const ai = e.target.closest('[data-ai]');
-  if (ai) { S.currentAlgo = +ai.dataset.ai; S.currentStep = 0; renderLists(); renderAlgo(); }
+  if (ai) { S.currentAlgo = +ai.dataset.ai; S.currentStep = 0; renderLists(); renderAlgo(); renderExercise(); saveState(); }
 
   const at = e.target.closest('[data-at]');
   if (at) { S.currentAttack = +at.dataset.at; renderLists(); renderAttack(); }
@@ -426,10 +706,24 @@ document.addEventListener('click', e => {
   if (ex) { S.currentExample = +ex.dataset.ex; renderLists(); renderExample(); }
 
   const op = e.target.closest('[data-opt]');
-  if (op) { S.quizAnswers[S.quizIndex] = +op.dataset.opt; renderQuiz(); }
+  if (op) {
+    const indices = getFilteredQuizIndices();
+    const realIdx = indices[S.quizIndex];
+    S.quizAnswers[realIdx] = +op.dataset.opt;
+    S.quizTimes[realIdx] = Math.floor((Date.now() - S.quizQuestionStart) / 1000);
+    renderQuiz();
+    saveState();
+  }
 
   const na = e.target.closest('.nav a');
   if (na) { document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active')); na.classList.add('active'); }
+});
+
+document.addEventListener('input', e => {
+  const ep = e.target.closest('[data-exparam]');
+  if (ep) { S.exerciseParams[ep.dataset.exparam] = ep.value; S.exerciseChecked = false; renderExercise(); }
+  const ef = e.target.closest('[data-exfield]');
+  if (ef) { S.exerciseAnswers[ef.dataset.exfield] = ef.value; }
 });
 
 document.getElementById('nextStepBtn').addEventListener('click', () => {
@@ -445,32 +739,81 @@ document.getElementById('resetStepBtn').addEventListener('click', () => {
   renderAlgo();
 });
 document.getElementById('nextQuizBtn').addEventListener('click', () => {
-  S.quizIndex = Math.min(S.quizIndex + 1, QUIZ.length - 1);
+  const indices = getFilteredQuizIndices();
+  S.quizIndex = Math.min(S.quizIndex + 1, indices.length - 1);
+  S.quizQuestionStart = Date.now();
   renderQuiz();
+  saveState();
 });
 document.getElementById('prevQuizBtn').addEventListener('click', () => {
   S.quizIndex = Math.max(S.quizIndex - 1, 0);
+  S.quizQuestionStart = Date.now();
   renderQuiz();
 });
 document.getElementById('restartQuizBtn').addEventListener('click', () => {
   S.quizIndex = 0;
   S.quizAnswers = Array(QUIZ.length).fill(null);
+  S.quizTimes = Array(QUIZ.length).fill(0);
+  S.quizQuestionStart = Date.now();
+  S.quizSessionStart = Date.now();
   renderQuiz();
+  saveState();
 });
-document.getElementById('modeStudent').addEventListener('click', () => { S.mode = 'student'; renderAlgo(); });
-document.getElementById('modeTeacher').addEventListener('click', () => { S.mode = 'teacher'; renderAlgo(); });
+document.getElementById('quizCategoryFilter').addEventListener('change', e => {
+  S.quizCategory = e.target.value;
+  S.quizIndex = 0;
+  S.quizQuestionStart = Date.now();
+  renderQuiz();
+  saveState();
+});
+document.getElementById('modeStudent').addEventListener('click', () => { S.mode = 'student'; renderAlgo(); updateModeIndicator(); });
+document.getElementById('modeTeacher').addEventListener('click', () => { S.mode = 'teacher'; renderAlgo(); updateModeIndicator(); });
+document.getElementById('modeExercise').addEventListener('click', () => {
+  S.exerciseMode = !S.exerciseMode;
+  document.getElementById('modeExercise').classList.toggle('btn-primary', S.exerciseMode);
+  document.getElementById('modeExercise').classList.toggle('btn-secondary', !S.exerciseMode);
+  renderExercise();
+  updateModeIndicator();
+});
+document.getElementById('exerciseCheckBtn').addEventListener('click', () => {
+  const algoId = ALGORITHMS[S.currentAlgo].id;
+  const ex = EXERCISES[algoId];
+  if (!ex) return;
+  S.exerciseResult = ex.run(S.exerciseParams);
+  S.exerciseChecked = true;
+  renderExercise();
+});
 
 // ── Theme toggle ─────────────────────────────────────────────────────────────
-let theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+const savedState = loadState();
+let theme = (savedState && savedState.theme) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 document.documentElement.setAttribute('data-theme', theme);
 document.getElementById('themeBtn').addEventListener('click', () => {
   theme = theme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', theme);
+  saveState();
 });
+
+// ── Restore persisted progress ──────────────────────────────────────────────
+if (savedState) {
+  if (Number.isInteger(savedState.currentAlgo) && ALGORITHMS[savedState.currentAlgo]) S.currentAlgo = savedState.currentAlgo;
+  if (Array.isArray(savedState.quizAnswers) && savedState.quizAnswers.length === QUIZ.length) S.quizAnswers = savedState.quizAnswers;
+  if (savedState.quizCategory) S.quizCategory = savedState.quizCategory;
+  if (Number.isInteger(savedState.quizIndex)) S.quizIndex = savedState.quizIndex;
+}
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 renderLists();
 renderAlgo();
+renderExercise();
 renderAttack();
 renderExample();
+renderExamSheet();
 renderQuiz();
+updateModeIndicator();
+
+// Live quiz timer tick
+setInterval(() => {
+  const timerEl = document.getElementById('quizTimer');
+  if (timerEl) timerEl.textContent = formatSeconds(Math.floor((Date.now() - S.quizQuestionStart) / 1000));
+}, 1000);
