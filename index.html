@@ -433,6 +433,10 @@
 
 <script src="app.js"></script>
 <script src="exercise_engine.js"></script>
+<script type="module">
+  import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+  globalThis.webllm = webllm;
+</script>
 <script src="ai_tutor.js"></script>
 <script>
 // ── Section navigation ──────────────────────────────────────────────────────
