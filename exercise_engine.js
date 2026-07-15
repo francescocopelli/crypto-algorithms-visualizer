@@ -187,22 +187,6 @@ document.getElementById('exerciseResetBtnSec').addEventListener('click', () => {
   renderExerciseSection();
 });
 
-// ── Section navigation extension ──────────────────────────────────────────
-const SECTIONS = ['visualizer','attacks','examples','exercises','quiz','teacher','examsheet'];
-document.querySelectorAll('.nav a').forEach(a => {
-  a.addEventListener('click', e => {
-    e.preventDefault();
-    const sec = a.dataset.section;
-    document.querySelectorAll('.nav a').forEach(x => x.classList.remove('active'));
-    a.classList.add('active');
-    SECTIONS.forEach(s => {
-      const el = document.getElementById('sec-' + s);
-      if (el) el.classList.toggle('active', s === sec);
-    });
-    if (sec === 'exercises') renderExerciseSection();
-  });
-});
-
 // Initialize standalone exercises for both supported algorithms
 initSecEx('rsa');
 initSecEx('dh');
