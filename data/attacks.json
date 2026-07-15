@@ -1,0 +1,8 @@
+[
+  { "id": "ecb",          "name": "ECB leakage",          "type": "Chosen-plaintext",    "target": "ECB",           "risk": 84 },
+  { "id": "des-brute",    "name": "DES brute force",       "type": "Exhaustive search",   "target": "DES",           "risk": 91 },
+  { "id": "cbc-flip",     "name": "CBC bit flipping",      "type": "Ciphertext manip.",  "target": "CBC",           "risk": 79 },
+  { "id": "textbook-rsa", "name": "Textbook RSA",          "type": "Structural weakness","target": "RSA",           "risk": 88 },
+  { "id": "nonce-reuse",  "name": "Nonce reuse (AEAD)",    "type": "Operational failure","target": "AEAD",          "risk": 95 },
+  { "id": "reused-k",     "name": "Reused ephemeral k",    "type": "Ephemeral key fail",  "target": "ElGamal/DSA",   "risk": 93 }
+]

@@ -1,0 +1,8 @@
+[
+  { "id": "rsa-toy",     "topic": "RSA",             "title": "RSA toy example",             "steps": 5 },
+  { "id": "dh-small",    "topic": "Diffie-Hellman",  "title": "Small-prime DH exchange",      "steps": 4 },
+  { "id": "aes-round",   "topic": "AES",             "title": "AES round intuition",          "steps": 5 },
+  { "id": "mac-compare", "topic": "MAC",             "title": "Hash vs HMAC",                 "steps": 4 },
+  { "id": "ecb-demo",    "topic": "Attack",          "title": "ECB image thought experiment",  "steps": 4 },
+  { "id": "ecc-shared",  "topic": "ECC",             "title": "ECDH conceptual flow",          "steps": 4 }
+]

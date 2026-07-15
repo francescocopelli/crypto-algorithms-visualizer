@@ -1,0 +1,8 @@
+[
+  { "title": "DES",             "focus": "historical",    "key_concept": "S-boxes provide nonlinearity" },
+  { "title": "AES",             "focus": "structural",     "key_concept": "SubBytes confusion, MixColumns diffusion" },
+  { "title": "RSA",             "focus": "trapdoor",       "key_concept": "Factoring hardness; OAEP padding mandatory" },
+  { "title": "Diffie-Hellman",  "focus": "protocol",       "key_concept": "Shared secret; no peer authentication" },
+  { "title": "Hashes and MACs", "focus": "distinction",    "key_concept": "Hash = fingerprint; MAC = keyed integrity" },
+  { "title": "AEAD",            "focus": "composition",    "key_concept": "Verify tag before decrypting; nonce is critical" }
+]
