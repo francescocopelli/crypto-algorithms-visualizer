@@ -113,6 +113,34 @@
     .faq-item[open] summary { border-color: var(--accent); color: var(--accent); }
     .faq-answer { padding: .6rem .75rem; font-size: var(--text-sm); color: var(--color-text-muted); border-left: 3px solid var(--accent); margin-top: .3rem; }
     .ct-progress-label { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: .3rem; }
+
+    /* ── AI Tutor panel ──────────────────────────────────────────────────── */
+    .ai-tutor-wrap { margin-top: 1.25rem; border: 1px solid var(--accent); border-radius: var(--radius-lg); background: var(--bg-card); overflow: hidden; }
+    .ai-tutor-header { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; padding: .75rem 1rem; border-bottom: 1px solid var(--border); background: var(--accent-soft); }
+    .ai-tutor-header h4 { flex: 1; font-size: var(--text-sm); font-weight: 700; color: var(--accent); margin: 0; }
+    #ai-tutor-load-btn { flex-shrink: 0; }
+    .ai-tutor-progress { font-size: var(--text-xs); color: var(--color-text-muted); width: 100%; }
+    .ai-tutor-progress-bar-track { height: .3rem; background: var(--bg-surface); border-radius: 999px; overflow: hidden; margin-top: .25rem; display: none; }
+    .ai-tutor-progress-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; width: 0%; transition: width .3s ease; }
+    .ai-tutor-suggestions { padding: .6rem 1rem; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+    .ai-tutor-suggestions .label { font-size: var(--text-xs); color: var(--color-text-muted); white-space: nowrap; }
+    .ai-suggestion-btn { font-size: var(--text-xs); padding: .25rem .65rem; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); cursor: pointer; transition: var(--transition); }
+    .ai-suggestion-btn:hover { background: var(--accent); color: #fff; }
+    .ai-tutor-messages { max-height: 320px; overflow-y: auto; padding: .75rem 1rem; display: flex; flex-direction: column; gap: .6rem; }
+    .ai-tutor-messages:empty::before { content: 'Carica il modello e inizia a fare domande sull\'argomento corrente.'; font-size: var(--text-xs); color: var(--color-text-muted); font-style: italic; }
+    .ai-msg { padding: .55rem .8rem; border-radius: var(--radius); font-size: var(--text-sm); line-height: 1.55; max-width: 92%; }
+    .ai-msg.user { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: .15rem; }
+    .ai-msg.assistant { background: var(--bg-surface); border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: .15rem; white-space: pre-wrap; }
+    .ai-msg.assistant.streaming::after { content: '▋'; animation: blink .7s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .ai-tutor-form { display: flex; gap: .5rem; padding: .65rem 1rem; border-top: 1px solid var(--border); background: var(--bg-surface); }
+    .ai-tutor-form input { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: .4rem .75rem; color: var(--color-text); font-size: var(--text-sm); width: auto; }
+    .ai-tutor-form input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+    .ai-tutor-form button[type=submit] { flex-shrink: 0; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: .4rem .9rem; font-size: var(--text-sm); cursor: pointer; transition: var(--transition); }
+    .ai-tutor-form button[type=submit]:hover { background: var(--accent-hover); }
+    .ai-tutor-form button[type=submit]:disabled { opacity: .5; cursor: not-allowed; }
+    .ai-reset-btn { font-size: var(--text-xs); padding: .25rem .65rem; border-radius: var(--radius); border: 1px solid var(--border); background: transparent; color: var(--color-text-muted); cursor: pointer; transition: var(--transition); }
+    .ai-reset-btn:hover { border-color: var(--danger); color: var(--danger); }
   </style>
 </head>
 <body>
@@ -358,6 +386,32 @@
             <h4>❓ Domande frequenti su questo argomento</h4>
             <div class="faq-list" id="ctFaqList"></div>
           </div>
+
+          <!-- ── AI Tutor panel ──────────────────────────────────────────── -->
+          <div class="ai-tutor-wrap" id="aiTutorWrap">
+            <div class="ai-tutor-header">
+              <h4>🤖 AI Tutor — <span id="aiTopicLabel">—</span></h4>
+              <button id="ai-tutor-load-btn" class="btn btn-primary btn-sm">Carica modello AI</button>
+              <button class="ai-reset-btn" id="ai-tutor-reset-btn" title="Azzera cronologia">🗑 Reset chat</button>
+            </div>
+            <div style="padding:.4rem 1rem .2rem">
+              <div class="ai-tutor-progress" id="aiProgressText"></div>
+              <div class="ai-tutor-progress-bar-track" id="aiProgressTrack">
+                <div class="ai-tutor-progress-bar-fill" id="aiProgressFill"></div>
+              </div>
+            </div>
+            <div class="ai-tutor-suggestions" id="aiSuggestions">
+              <span class="label">Suggerimenti:</span>
+              <!-- chip inseriti da JS -->
+            </div>
+            <div class="ai-tutor-messages" id="aiMessages"></div>
+            <form class="ai-tutor-form" id="aiForm" autocomplete="off">
+              <input id="aiInput" type="text" placeholder="Scrivi una domanda…" />
+              <button type="submit" id="aiSubmitBtn" disabled>Chiedi</button>
+            </form>
+          </div>
+          <!-- ── /AI Tutor panel ─────────────────────────────────────────── -->
+
         </div>
       </div>
     </section>
@@ -379,6 +433,7 @@
 
 <script src="app.js"></script>
 <script src="exercise_engine.js"></script>
+<script src="ai_tutor.js"></script>
 <script>
 // ── Section navigation ──────────────────────────────────────────────────────
 const SECTIONS = ['visualizer','attacks','examples','exercises','quiz','coteaching','teacher','examsheet'];
@@ -493,6 +548,11 @@ initSecEx('rsa'); initSecEx('dh');
 const CT_TOPICS = [
   {
     id: 'rsa', label: 'RSA', tag: 'Chiave pubblica',
+    suggestions: [
+      'Spiegami passo per passo come scelgo e, d e φ(n) in RSA.',
+      'Perché non dovrei usare RSA direttamente per cifrare file grandi?',
+      'Qual è la differenza tra firma digitale RSA e cifratura RSA?'
+    ],
     steps: [
       {
         type: 'intro',
@@ -537,6 +597,11 @@ const CT_TOPICS = [
   },
   {
     id: 'dh', label: 'Diffie-Hellman', tag: 'Key exchange',
+    suggestions: [
+      'Perché Diffie-Hellman è vulnerabile al man-in-the-middle senza autenticazione?',
+      'Mostrami un esempio numerico semplice di scambio chiavi Diffie-Hellman.',
+      'Cosa significa che Diffie-Hellman si basa sulla discrete log?'
+    ],
     steps: [
       {
         type: 'intro',
@@ -581,6 +646,11 @@ const CT_TOPICS = [
   },
   {
     id: 'aes', label: 'AES', tag: 'Block cipher',
+    suggestions: [
+      'Perché MixColumns aiuta a ottenere diffusione in AES?',
+      'Spiegami perché AES in ECB è insicuro con un esempio intuitivo.',
+      'Che ruolo hanno SubBytes e ShiftRows nella sicurezza di AES?'
+    ],
     steps: [
       {
         type: 'intro',
@@ -602,7 +672,7 @@ const CT_TOPICS = [
       {
         type: 'modes',
         html: `<div class="lesson-bubble"><strong>Modalità operative</strong><br>AES da solo cifra un singolo blocco. Per dati lunghi servono modalità:<br>• <strong>ECB</strong>: blocchi indipendenti — insicuro, rivela pattern.<br>• <strong>CBC</strong>: ogni blocco XOR col precedente — no pattern, ma no integrità.<br>• <strong>GCM</strong>: cifratura + autenticazione in un colpo — la scelta moderna.</div>
-<div class="lesson-bubble warning"><strong>Errore comune ⚠️</strong> ECB è insicuro per dati strutturati: blocchi uguali → cifrati uguali. L\'immagine del pinguino ECB è il caso studio più famoso.</div>`,
+<div class="lesson-bubble warning"><strong>Errore comune ⚠️</strong> ECB è insicuro per dati strutturati: blocchi uguali → cifrati uguali. L'immagine del pinguino ECB è il caso studio più famoso.</div>`,
         question: {
           text: 'Perché ECB è considerato insicuro per dati strutturati?',
           opts: ['Chiave troppo corta', 'Blocchi uguali producono cifrati uguali', 'Non usa XOR', 'Non ha AddRoundKey'],
@@ -625,10 +695,15 @@ const CT_TOPICS = [
   },
   {
     id: 'hash', label: 'Hash & MAC', tag: 'Integrità',
+    suggestions: [
+      'Spiegami la differenza tra pre-image resistance e collision resistance.',
+      'Perché un MAC è diverso da una semplice funzione hash?',
+      'Come funziona HMAC ad alto livello?'
+    ],
     steps: [
       {
         type: 'intro',
-        html: `<div class="lesson-bubble">Le <strong>funzioni hash crittografiche</strong> trasformano dati di lunghezza arbitraria in un digest di dimensione fissa. Sono one-way: non è possibile risalire all\'input dall\'output.</div>
+        html: `<div class="lesson-bubble">Le <strong>funzioni hash crittografiche</strong> trasformano dati di lunghezza arbitraria in un digest di dimensione fissa. Sono one-way: non è possibile risalire all'input dall'output.</div>
 <div class="lesson-bubble analogy"><strong>Analogia 🔍</strong> Come un'impronta digitale: identifica univocamente un oggetto, ma non si può ricostruire l'oggetto dall'impronta.</div>`,
         question: null
       },
@@ -645,7 +720,7 @@ const CT_TOPICS = [
       {
         type: 'mac',
         html: `<div class="lesson-bubble"><strong>Hash vs MAC</strong><br>Un hash senza chiave fornisce solo un'impronta pubblica — chiunque può calcolarla. Un <strong>MAC</strong> (Message Authentication Code) aggiunge una chiave segreta: solo chi conosce la chiave può generare o verificare il tag.</div>
-<div class="lesson-bubble fact"><strong>HMAC</strong> è la costruzione standard: HMAC(K, m) = H(K ⊕ opad ∥ H(K ⊕ ipad ∥ m)). Evita l\'attacco di length-extension delle costruzioni naive.</div>`,
+<div class="lesson-bubble fact"><strong>HMAC</strong> è la costruzione standard: HMAC(K, m) = H(K ⊕ opad ∥ H(K ⊕ ipad ∥ m)). Evita l'attacco di length-extension delle costruzioni naive.</div>`,
         question: {
           text: 'Perché un semplice H(chiave ∥ messaggio) non è sicuro come HMAC?',
           opts: ['È troppo lento', 'È vulnerabile ad attacchi di length-extension', 'Non usa XOR', 'La chiave è troppo corta'],
@@ -668,6 +743,11 @@ const CT_TOPICS = [
   },
   {
     id: 'aead', label: 'AEAD', tag: 'Conf + integrità',
+    suggestions: [
+      'Perché è grave riutilizzare lo stesso nonce in AEAD?',
+      'Cosa sono i dati associati (AAD) in AES-GCM?',
+      'Perché si dice "verify-then-decrypt" per AEAD?'
+    ],
     steps: [
       {
         type: 'intro',
@@ -678,7 +758,7 @@ const CT_TOPICS = [
       {
         type: 'nonce',
         html: `<div class="lesson-bubble"><strong>Il ruolo del nonce</strong><br>Il nonce (number used once) deve essere unico per ogni cifratura con la stessa chiave. In AES-GCM è tipicamente 96 bit. Non ha bisogno di essere segreto, ma non può mai ripetersi.</div>
-<div class="lesson-bubble warning"><strong>Nonce reuse = disastro ⚠️</strong> Riusare nonce + chiave rivela relazioni tra plaintexts e distrugge l\'autenticità. Due ciphertext con lo stesso nonce: C1 ⊕ C2 = P1 ⊕ P2.</div>`,
+<div class="lesson-bubble warning"><strong>Nonce reuse = disastro ⚠️</strong> Riusare nonce + chiave rivela relazioni tra plaintexts e distrugge l'autenticità. Due ciphertext con lo stesso nonce: C1 ⊕ C2 = P1 ⊕ P2.</div>`,
         question: {
           text: 'Cosa succede se si riusa lo stesso nonce con la stessa chiave in AES-GCM?',
           opts: ['Rallenta la cifratura', 'Espone la XOR dei plaintexts e rompe l\'autenticazione', 'Il tag diventa più lungo', 'Non succede nulla'],
@@ -688,8 +768,8 @@ const CT_TOPICS = [
       },
       {
         type: 'verify_first',
-        html: `<div class="lesson-bubble"><strong>Verify-then-decrypt</strong><br>La regola d\'oro AEAD: verifica sempre il tag <em>prima</em> di usare il plaintext. Decifrare prima e verificare dopo espone a oracle attack (padding oracle, decryption oracle).</div>
-<div class="lesson-bubble fact"><strong>AAD (Associated Data)</strong> Dati autenticati ma non cifrati — es. header di rete. Garantisce che anche i metadati non vengano modificati, senza dover cifrare l\'intero pacchetto.</div>`,
+        html: `<div class="lesson-bubble"><strong>Verify-then-decrypt</strong><br>La regola d'oro AEAD: verifica sempre il tag <em>prima</em> di usare il plaintext. Decifrare prima e verificare dopo espone a oracle attack (padding oracle, decryption oracle).</div>
+<div class="lesson-bubble fact"><strong>AAD (Associated Data)</strong> Dati autenticati ma non cifrati — es. header di rete. Garantisce che anche i metadati non vengano modificati, senza dover cifrare l'intero pacchetto.</div>`,
         question: {
           text: 'Qual è l\'ordine corretto nell\'elaborazione di un messaggio AEAD?',
           opts: ['Decifra, poi verifica il tag', 'Verifica il tag, poi decifra', 'Cifra il tag, poi decifra', 'Ignora il tag se la chiave è lunga'],
@@ -715,12 +795,12 @@ const CT_TOPICS = [
 const CT_STATE = {
   topicIdx: 0,
   stepIdx: 0,
-  answered: {},   // { topicId_stepIdx: true/false }
-  completed: {}   // { topicId: stepsCompleted }
+  answered: {},
+  completed: {}
 };
 
 function ctTopic() { return CT_TOPICS[CT_STATE.topicIdx]; }
-function ctStep() { return ctTopic().steps[CT_STATE.stepIdx]; }
+function ctStep()  { return ctTopic().steps[CT_STATE.stepIdx]; }
 
 function renderCoteachSidebar() {
   document.getElementById('coteachList').innerHTML = CT_TOPICS.map((t, i) => {
@@ -742,24 +822,38 @@ function renderCoteachSidebar() {
   }).join('');
 }
 
+function renderAiSuggestions(topic) {
+  const container = document.getElementById('aiSuggestions');
+  const suggestions = topic.suggestions || [];
+  container.innerHTML = `<span class="label">Suggerimenti per <strong>${topic.label}</strong>:</span>`;
+  suggestions.forEach(text => {
+    const btn = document.createElement('button');
+    btn.className = 'ai-suggestion-btn';
+    btn.textContent = text;
+    btn.addEventListener('click', () => {
+      document.getElementById('aiInput').value = text;
+      document.getElementById('aiInput').focus();
+    });
+    container.appendChild(btn);
+  });
+}
+
 function renderCoteach() {
   const topic = ctTopic();
-  const step = ctStep();
-  const stepIdx = CT_STATE.stepIdx;
+  const step  = ctStep();
+  const stepIdx   = CT_STATE.stepIdx;
   const totalSteps = topic.steps.length;
   const ansKey = `${topic.id}_${stepIdx}`;
 
   document.getElementById('ctTopicTitle').textContent = topic.label;
-  document.getElementById('ctTopicTag').textContent = topic.tag;
-  document.getElementById('ctStepLabel').textContent = `Passo ${stepIdx + 1} / ${totalSteps}`;
+  document.getElementById('ctTopicTag').textContent   = topic.tag;
+  document.getElementById('ctStepLabel').textContent  = `Passo ${stepIdx + 1} / ${totalSteps}`;
   document.getElementById('ctProgressBar').style.width = `${Math.round((stepIdx + 1) / totalSteps * 100)}%`;
   document.getElementById('ctPrevBtn').disabled = stepIdx === 0;
   document.getElementById('ctNextBtn').disabled = stepIdx === totalSteps - 1;
 
   // Lesson content
   let html = step.html;
-
-  // Question block
   if (step.question) {
     const answered = CT_STATE.answered[ansKey];
     html += `<div class="ct-question">
@@ -778,7 +872,6 @@ function renderCoteach() {
     }
     html += `</div>`;
   }
-
   document.getElementById('ctLessonContent').innerHTML = html;
 
   // FAQ
@@ -786,17 +879,24 @@ function renderCoteach() {
     `<details class="faq-item"><summary>${f.q}</summary><div class="faq-answer">${f.a}</div></details>`
   ).join('');
 
+  // AI Tutor: update label + suggestions
+  document.getElementById('aiTopicLabel').textContent = topic.label;
+  renderAiSuggestions(topic);
+
+  // Notify AiTutor of topic change (if loaded)
+  if (typeof AiTutor !== 'undefined') {
+    AiTutor._currentTopic = topic.id; // soft-set; ask() will handle context injection
+  }
+
   renderCoteachSidebar();
 }
 
-// Mark progress
 function ctMarkProgress() {
   const topic = ctTopic();
   if (!CT_STATE.completed[topic.id]) CT_STATE.completed[topic.id] = 0;
   CT_STATE.completed[topic.id] = Math.max(CT_STATE.completed[topic.id], CT_STATE.stepIdx + 1);
 }
 
-// Navigation
 document.getElementById('ctNextBtn').addEventListener('click', () => {
   ctMarkProgress();
   if (CT_STATE.stepIdx < ctTopic().steps.length - 1) { CT_STATE.stepIdx++; renderCoteach(); }
@@ -809,21 +909,17 @@ document.getElementById('ctRestartBtn').addEventListener('click', () => {
   CT_STATE.answered = {};
   renderCoteach();
 });
-
-// Sidebar topic switch
 document.getElementById('coteachList').addEventListener('click', e => {
   const btn = e.target.closest('[data-ctidx]');
   if (!btn) return;
   CT_STATE.topicIdx = +btn.dataset.ctidx;
-  CT_STATE.stepIdx = 0;
+  CT_STATE.stepIdx  = 0;
   renderCoteach();
 });
-
-// Answer question
 document.getElementById('ctLessonContent').addEventListener('click', e => {
   const btn = e.target.closest('[data-ctopt]');
   if (!btn) return;
-  const topic = ctTopic();
+  const topic  = ctTopic();
   const ansKey = `${topic.id}_${CT_STATE.stepIdx}`;
   if (CT_STATE.answered[ansKey] !== undefined) return;
   CT_STATE.answered[ansKey] = +btn.dataset.ctopt;
@@ -833,6 +929,100 @@ document.getElementById('ctLessonContent').addEventListener('click', e => {
 
 // Init co-teaching on first open
 renderCoteach();
+
+// ── AI Tutor wiring ──────────────────────────────────────────────────────────
+(function () {
+  const loadBtn      = document.getElementById('ai-tutor-load-btn');
+  const resetBtn     = document.getElementById('ai-tutor-reset-btn');
+  const progressText = document.getElementById('aiProgressText');
+  const progressTrack= document.getElementById('aiProgressTrack');
+  const progressFill = document.getElementById('aiProgressFill');
+  const messagesEl   = document.getElementById('aiMessages');
+  const form         = document.getElementById('aiForm');
+  const input        = document.getElementById('aiInput');
+  const submitBtn    = document.getElementById('aiSubmitBtn');
+
+  function setProgress(pct, text) {
+    progressText.textContent = text || '';
+    if (pct < 0) {
+      progressText.style.color = 'var(--danger)';
+      progressTrack.style.display = 'none';
+      return;
+    }
+    progressText.style.color = '';
+    if (pct > 0 && pct < 100) {
+      progressTrack.style.display = 'block';
+      progressFill.style.width = pct + '%';
+    } else if (pct === 100) {
+      progressTrack.style.display = 'none';
+      progressFill.style.width = '100%';
+      submitBtn.disabled = false;
+      loadBtn.disabled = true;
+      loadBtn.textContent = '✓ Modello pronto';
+    }
+  }
+
+  AiTutor.onProgress(({ progress, text }) => setProgress(progress, text));
+
+  loadBtn.addEventListener('click', async () => {
+    if (AiTutor.isReady() || AiTutor.isLoading()) return;
+    loadBtn.disabled = true;
+    setProgress(0, 'Avvio download modello (~2.2 GB)…');
+    try {
+      await AiTutor.init();
+    } catch (err) {
+      loadBtn.disabled = false;
+      setProgress(-1, 'Errore: ' + err.message);
+    }
+  });
+
+  resetBtn.addEventListener('click', () => {
+    AiTutor.reset();
+    messagesEl.innerHTML = '';
+  });
+
+  function appendMessage(role, text, streaming) {
+    const div = document.createElement('div');
+    div.className = 'ai-msg ' + role + (streaming ? ' streaming' : '');
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = input.value.trim();
+    if (!msg) return;
+    if (!AiTutor.isReady()) {
+      setProgress(-1, 'Carica prima il modello con il pulsante qui sopra.');
+      return;
+    }
+
+    const topicId = ctTopic().id;
+    input.value = '';
+    submitBtn.disabled = true;
+
+    appendMessage('user', msg, false);
+    const bubble = appendMessage('assistant', '', true);
+
+    try {
+      let full = '';
+      for await (const chunk of AiTutor.ask(msg, topicId)) {
+        full += chunk;
+        bubble.textContent = full;
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+      bubble.classList.remove('streaming');
+    } catch (err) {
+      bubble.textContent = 'Errore: ' + err.message;
+      bubble.classList.remove('streaming');
+    } finally {
+      submitBtn.disabled = false;
+      input.focus();
+    }
+  });
+})();
 </script>
 </body>
 </html>
