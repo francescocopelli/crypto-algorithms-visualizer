@@ -590,4 +590,318 @@ function renderExercise() {
 
   // Progress indicator
   const completedCount = steps.filter(s => revealed[s.id]).length;
-  document.getElementById('exerciseProgressBar').style.width = `${(completedC
+  const pct = steps.length > 0 ? Math.round(completedCount / steps.length * 100) : 0;
+  document.getElementById('exerciseProgressBar').style.width = `${pct}%`;
+  document.getElementById('exerciseProgressLabel').textContent = `Passaggi completati: ${completedCount} / ${steps.length}`;
+
+  // Steps container — built via helper from exercise_engine.js
+  if (typeof buildExerciseStepsHTML === 'function') {
+    document.getElementById('exerciseStepsContainer').innerHTML = buildExerciseStepsHTML(steps, answers, revealed, S.exerciseStepIndex);
+  }
+
+  // Completion banner
+  const allDone = steps.length > 0 && steps.every(s => revealed[s.id]);
+  const allCorrect = allDone && steps.every(s => String(answers[s.id] || '').trim() === s.answer);
+  const banner = document.getElementById('exerciseCompletionBanner');
+  if (allDone) {
+    banner.style.display = '';
+    banner.innerHTML = allCorrect
+      ? `<strong>Ottimo! Tutti i passaggi corretti ✓</strong> Premi "Nuovo esercizio" per una nuova sessione.`
+      : `<strong>Esercizio completato.</strong> Riprova con "Nuovo esercizio" per consolidare.`;
+    banner.className = allCorrect ? 'callout' : 'callout callout-warn';
+  } else { banner.style.display = 'none'; }
+}
+
+// ── Quiz rendering and navigation ────────────────────────────────────────────
+function renderQuizCategories() {
+  const catSel = document.getElementById('quizCategoryFilter');
+  if (!catSel) return;
+  const cats = ['All', ...Array.from(new Set(QUIZ.map(q => q.category)))];
+  catSel.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  catSel.value = S.quizCategory;
+}
+
+function filteredQuiz() {
+  if (S.quizCategory === 'All') return QUIZ;
+  return QUIZ.filter(q => q.category === S.quizCategory);
+}
+
+function renderQuiz() {
+  const list = filteredQuiz();
+  if (S.quizIndex >= list.length) S.quizIndex = Math.max(0, list.length - 1);
+  const q = list[S.quizIndex];
+  const globalIndex = QUIZ.indexOf(q);
+  document.getElementById('quizQuestionTitle').textContent = `Q${S.quizIndex + 1}`;
+  document.getElementById('quizCategory').textContent = q.category;
+  document.getElementById('quizQuestionText').textContent = q.q;
+  const answered = S.quizAnswers[globalIndex];
+  document.getElementById('quizOptions').innerHTML = q.opts.map((opt, i) => {
+    let cls = 'quiz-option';
+    if (answered !== null) {
+      if (i === q.correct) cls += ' correct';
+      else if (i === answered) cls += ' wrong';
+    }
+    return `<button class="${cls}" data-qopt="${i}">${opt}</button>`;
+  }).join('');
+  const answeredCount = S.quizAnswers.filter(x => x !== null).length;
+  const correctCount = S.quizAnswers.filter((ans, idx) => ans !== null && ans === QUIZ[idx].correct).length;
+  document.getElementById('quizAnswered').textContent = answeredCount;
+  document.getElementById('quizCorrect').textContent = correctCount;
+  document.getElementById('quizAccuracy').textContent = answeredCount ? `${Math.round(correctCount / answeredCount * 100)}%` : '0%';
+  document.getElementById('quizProgress').style.width = `${list.length ? Math.round((S.quizIndex + 1) / list.length * 100) : 0}%`;
+  document.getElementById('quizExplanation').textContent = answered !== null ? q.ex : '';
+  document.getElementById('quizCompletionMsg').style.display = answeredCount === QUIZ.length ? '' : 'none';
+  document.getElementById('quizCompletionMsg').textContent = answeredCount === QUIZ.length ? 'Quiz completo — rivedi le spiegazioni e ripeti le domande più deboli.' : '';
+}
+
+function tickQuizTimer() {
+  const now = Date.now();
+  const totalSeconds = Math.floor((now - S.quizSessionStart) / 1000);
+  const timer = document.getElementById('quizTimer');
+  if (timer) timer.textContent = `${totalSeconds}s`;
+  requestAnimationFrame(tickQuizTimer);
+}
+
+// ── Exam sheet render ───────────────────────────────────────────────────────
+function renderExamSheet() {
+  const grid = document.getElementById('examSheetGrid');
+  if (!grid) return;
+  grid.innerHTML = EXAM_SHEET.map(row => `
+    <article class="card">
+      <h3>${row.name}</h3>
+      <div class="kpi-row" style="margin-top:.5rem">
+        <div class="kpi"><span>Confidentiality</span><strong>${row.confidentiality}</strong></div>
+        <div class="kpi"><span>Integrity</span><strong>${row.integrity}</strong></div>
+        <div class="kpi"><span>Authentication</span><strong>${row.authentication}</strong></div>
+        <div class="kpi"><span>Non-repudiation</span><strong>${row.nonRepudiation}</strong></div>
+      </div>
+      <p style="margin-top:.5rem;font-size:var(--text-sm)"><strong>Use:</strong> ${row.use}</p>
+      <p style="margin-top:.25rem;font-size:var(--text-sm)"><strong>Threat:</strong> ${row.threat}</p>
+      <p style="margin-top:.25rem;font-size:var(--text-sm)"><strong>Secure usage:</strong> ${row.secure}</p>
+    </article>
+  `).join('');
+}
+
+// ── Theme toggle ─────────────────────────────────────────────────────────────
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeBtn').textContent = theme === 'dark' ? '🌓 Theme' : '🌗 Theme';
+}
+
+function initTheme() {
+  const stored = loadState();
+  const theme = stored && stored.theme ? stored.theme : 'dark';
+  applyTheme(theme);
+}
+
+// ── Mode toggle ─────────────────────────────────────────────────────────────
+function updateModeIndicator() {
+  const el = document.getElementById('modeIndicator');
+  if (!el) return;
+  const t = S.mode === 'teacher' ? 'Mode: Teacher' : 'Mode: Student';
+  el.textContent = S.exerciseMode ? 'Mode: Exercise' : t;
+  el.className = 'badge ' + (S.exerciseMode ? 'primary' : (S.mode === 'teacher' ? 'success' : ''));
+}
+
+// ── App init & event wiring ─────────────────────────────────────────────────
+function initApp() {
+  const stored = loadState();
+  if (stored) {
+    S.currentAlgo = stored.currentAlgo || 0;
+    S.quizAnswers = Array.isArray(stored.quizAnswers) && stored.quizAnswers.length === QUIZ.length ? stored.quizAnswers : S.quizAnswers;
+    S.quizIndex = stored.quizIndex || 0;
+    S.quizCategory = stored.quizCategory || 'All';
+  }
+
+  renderLists();
+  renderAlgo();
+  renderAttack();
+  renderExample();
+  renderExercise();
+  renderQuizCategories();
+  renderQuiz();
+  renderExamSheet();
+  updateModeIndicator();
+
+  S.quizSessionStart = Date.now();
+  requestAnimationFrame(tickQuizTimer);
+
+  // Algo navigation
+  document.getElementById('algoList').addEventListener('click', e => {
+    const btn = e.target.closest('[data-ai]');
+    if (!btn) return;
+    S.currentAlgo = +btn.dataset.ai;
+    S.currentStep = 0;
+    renderLists();
+    renderAlgo();
+    renderExercise();
+    saveState();
+  });
+
+  document.getElementById('prevStepBtn').addEventListener('click', () => {
+    if (S.currentStep > 0) S.currentStep--;
+    renderAlgo();
+  });
+
+  document.getElementById('nextStepBtn').addEventListener('click', () => {
+    const al = ALGORITHMS[S.currentAlgo];
+    if (S.currentStep < al.steps.length - 1) S.currentStep++;
+    renderAlgo();
+  });
+
+  document.getElementById('resetStepBtn').addEventListener('click', () => {
+    S.currentStep = 0;
+    renderAlgo();
+  });
+
+  // Attack/exam/example navigation
+  document.getElementById('attackList').addEventListener('click', e => {
+    const btn = e.target.closest('[data-at]');
+    if (!btn) return;
+    S.currentAttack = +btn.dataset.at;
+    renderLists();
+    renderAttack();
+  });
+
+  document.getElementById('exampleList').addEventListener('click', e => {
+    const btn = e.target.closest('[data-ex]');
+    if (!btn) return;
+    S.currentExample = +btn.dataset.ex;
+    renderLists();
+    renderExample();
+  });
+
+  // Mode buttons
+  document.getElementById('modeStudent').addEventListener('click', () => {
+    S.mode = 'student';
+    S.exerciseMode = false;
+    renderAlgo();
+    renderExercise();
+    updateModeIndicator();
+  });
+
+  document.getElementById('modeTeacher').addEventListener('click', () => {
+    S.mode = 'teacher';
+    S.exerciseMode = false;
+    renderAlgo();
+    renderExercise();
+    updateModeIndicator();
+  });
+
+  document.getElementById('modeExercise').addEventListener('click', () => {
+    S.exerciseMode = true;
+    updateModeIndicator();
+    renderExercise();
+  });
+
+  // Theme toggle
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+    saveState();
+  });
+
+  // Quiz events
+  document.getElementById('quizCategoryFilter').addEventListener('change', e => {
+    S.quizCategory = e.target.value;
+    S.quizIndex = 0;
+    renderQuiz();
+    saveState();
+  });
+
+  document.getElementById('quizOptions').addEventListener('click', e => {
+    const btn = e.target.closest('[data-qopt]');
+    if (!btn) return;
+    const list = filteredQuiz();
+    const q = list[S.quizIndex];
+    const globalIndex = QUIZ.indexOf(q);
+    S.quizAnswers[globalIndex] = +btn.dataset.qopt;
+    renderQuiz();
+    saveState();
+  });
+
+  document.getElementById('prevQuizBtn').addEventListener('click', () => {
+    const list = filteredQuiz();
+    if (S.quizIndex > 0) S.quizIndex--;
+    renderQuiz();
+  });
+
+  document.getElementById('nextQuizBtn').addEventListener('click', () => {
+    const list = filteredQuiz();
+    if (S.quizIndex < list.length - 1) S.quizIndex++;
+    renderQuiz();
+  });
+
+  document.getElementById('restartQuizBtn').addEventListener('click', () => {
+    S.quizAnswers = Array(QUIZ.length).fill(null);
+    S.quizIndex = 0;
+    S.quizSessionStart = Date.now();
+    renderQuiz();
+    saveState();
+  });
+
+  // Exercise events (dynamic panel and standalone section share logic)
+  document.getElementById('exerciseRandomBtn').addEventListener('click', () => {
+    randomizeExerciseParams();
+  });
+
+  document.getElementById('exerciseResetBtn').addEventListener('click', () => {
+    resetExerciseProgress();
+    renderExercise();
+  });
+
+  document.getElementById('exerciseBody').addEventListener('click', e => {
+    const algoId = ALGORITHMS[S.currentAlgo].id;
+    const ex = EXERCISES[algoId];
+    if (!ex) return;
+    const answers = S.exerciseAnswers[algoId];
+    const revealed = S.exerciseRevealed[algoId];
+    const steps = S.exerciseSteps;
+
+    const checkBtn = e.target.closest('[data-checkstep]');
+    if (checkBtn) {
+      const idx = +checkBtn.dataset.checkstep;
+      const step = steps[idx];
+      const inputEl = document.getElementById(`exstep-input-${idx}`);
+      const val = inputEl ? inputEl.value : '';
+      answers[step.id] = val;
+      revealed[step.id] = true;
+      const correct = String(val).trim() === step.answer;
+      if (correct && S.exerciseStepIndex === idx) S.exerciseStepIndex = Math.min(idx + 1, steps.length - 1);
+      renderExercise();
+      return;
+    }
+
+    const showBtn = e.target.closest('[data-showstep]');
+    if (showBtn) {
+      const idx = +showBtn.dataset.showstep;
+      const step = steps[idx];
+      answers[step.id] = step.answer;
+      revealed[step.id] = true;
+      if (S.exerciseStepIndex === idx) S.exerciseStepIndex = Math.min(idx + 1, steps.length - 1);
+      renderExercise();
+      return;
+    }
+  });
+
+  document.getElementById('exerciseBody').addEventListener('input', e => {
+    const stepInput = e.target.closest('[data-stepidx]');
+    if (stepInput) {
+      const algoId = ALGORITHMS[S.currentAlgo].id;
+      const step = S.exerciseSteps[+stepInput.dataset.stepidx];
+      if (step) S.exerciseAnswers[algoId][step.id] = stepInput.value;
+    }
+    const paramInput = e.target.closest('[data-exparam]');
+    if (paramInput) {
+      const algoId = paramInput.dataset.algoex;
+      S.exerciseParams[algoId][paramInput.dataset.exparam] = paramInput.value;
+      const ex = EXERCISES[algoId];
+      if (ex) { S.exerciseSteps = ex.buildSteps(S.exerciseParams[algoId]); S.exerciseAnswers[algoId] = {}; S.exerciseRevealed[algoId] = {}; S.exerciseStepIndex = 0; }
+      renderExercise();
+    }
+  });
+}
+
+// ── Bootstrap ───────────────────────────────────────────────────────────────
+initTheme();
+window.addEventListener('load', initApp);

@@ -48,139 +48,161 @@ function buildExerciseStepsHTML(steps, answers, revealed, stepIndex) {
   }).join('');
 }
 
-// Main exercise render — extends renderExercise() in app.js.
-// Overrides exerciseBody with step-by-step rendering.
-const _origRenderExercise = window._origRenderExercise || (() => {});
+// Standalone Exercises section (sec-exercises) logic — shares EXERCISES and helpers.
+const SEC_EX = {
+  algoId: 'rsa',
+  params: {},
+  steps: [],
+  stepIndex: 0,
+  answers: {},
+  revealed: {}
+};
 
-function renderExerciseFull() {
-  const panel = document.getElementById('exercisePanel');
-  const normal = document.getElementById('normalPanel');
-  if (!S.exerciseMode) { panel.style.display = 'none'; normal.style.display = ''; return; }
-  panel.style.display = ''; normal.style.display = 'none';
-
-  const algoId = ALGORITHMS[S.currentAlgo].id;
-  const ex = EXERCISES[algoId];
-  const unsupported = document.getElementById('exerciseUnsupported');
-  const body = document.getElementById('exerciseBody');
-  if (!ex) { unsupported.style.display = ''; body.style.display = 'none'; return; }
-  unsupported.style.display = 'none'; body.style.display = '';
-
-  if (S.exerciseParamsAlgo !== algoId) initExerciseState(algoId);
-
-  const params = S.exerciseParams[algoId];
-  const answers = S.exerciseAnswers[algoId];
-  const revealed = S.exerciseRevealed[algoId];
-  const steps = S.exerciseSteps;
-
-  document.getElementById('exerciseTitle').textContent = ex.title;
-  document.getElementById('exerciseGoal').textContent = ex.goal;
-
-  // Params
-  document.getElementById('exerciseParams').innerHTML = ex.params.map(p =>
-    `<div class="field"><label for="exparam-${p.id}">${p.label}</label>
-      <input class="mono" id="exparam-${p.id}" data-exparam="${p.id}" data-algoex="${algoId}" value="${params[p.id]}" inputmode="numeric"/></div>`
-  ).join('');
-
-  // Progress bar
-  const completedCount = steps.filter(s => revealed[s.id]).length;
-  const progressPct = steps.length > 0 ? Math.round(completedCount / steps.length * 100) : 0;
-  const progressBar = document.getElementById('exerciseProgressBar');
-  if (progressBar) progressBar.style.width = `${progressPct}%`;
-  const progressLabel = document.getElementById('exerciseProgressLabel');
-  if (progressLabel) progressLabel.textContent = `Passaggi completati: ${completedCount} / ${steps.length}`;
-
-  // Step-by-step cards
-  const stepsContainer = document.getElementById('exerciseStepsContainer');
-  if (stepsContainer) {
-    stepsContainer.innerHTML = buildExerciseStepsHTML(steps, answers, revealed, S.exerciseStepIndex);
-  }
-
-  // Final success banner
-  const allDone = steps.length > 0 && steps.every(s => revealed[s.id]);
-  const allCorrect = allDone && steps.every(s => String(answers[s.id] || '').trim() === s.answer);
-  const banner = document.getElementById('exerciseCompletionBanner');
-  if (banner) {
-    if (allDone) {
-      banner.style.display = '';
-      banner.innerHTML = allCorrect
-        ? `<strong>Ottimo! Tutti i passaggi corretti ✓</strong> Premi "Nuovo esercizio" per una nuova sessione con parametri diversi.`
-        : `<strong>Esercizio completato.</strong> Alcuni passaggi erano da rivedere — controlla le spiegazioni sopra e riprova con "Nuovo esercizio".`;
-      banner.className = allCorrect ? 'callout' : 'callout callout-warn';
-    } else {
-      banner.style.display = 'none';
-    }
-  }
-}
-
-// Wire up step-level buttons via delegation on exerciseBody.
-document.getElementById('exerciseBody').addEventListener('click', e => {
-  const algoId = ALGORITHMS[S.currentAlgo].id;
+function initSecEx(algoId) {
+  SEC_EX.algoId = algoId;
   const ex = EXERCISES[algoId];
   if (!ex) return;
-  const answers = S.exerciseAnswers[algoId];
-  const revealed = S.exerciseRevealed[algoId];
-  const steps = S.exerciseSteps;
+  if (!SEC_EX.params[algoId]) {
+    SEC_EX.params[algoId] = {};
+    ex.params.forEach(p => { SEC_EX.params[algoId][p.id] = p.default; });
+  }
+  SEC_EX.steps = ex.buildSteps(SEC_EX.params[algoId]);
+  SEC_EX.stepIndex = 0;
+  SEC_EX.answers[algoId] = SEC_EX.answers[algoId] || {};
+  SEC_EX.revealed[algoId] = SEC_EX.revealed[algoId] || {};
+}
 
-  // Verifica button
-  const checkBtn = e.target.closest('[data-checkstep]');
+function renderExerciseSection() {
+  const algoId = SEC_EX.algoId;
+  const ex = EXERCISES[algoId];
+  if (!ex) return;
+  if (!SEC_EX.steps || SEC_EX.steps.length === 0) initSecEx(algoId);
+
+  const params = SEC_EX.params[algoId];
+  const answers = SEC_EX.answers[algoId];
+  const revealed = SEC_EX.revealed[algoId];
+  const steps = SEC_EX.steps;
+
+  document.getElementById('exerciseTitleSec').textContent = ex.title;
+  document.getElementById('exerciseGoalSec').textContent = ex.goal;
+  document.getElementById('exerciseAlgoSelect').value = algoId;
+
+  document.getElementById('exerciseParamsSec').innerHTML = ex.params.map(p =>
+    `<div class="field"><label for="exparamsec-${p.id}">${p.label}</label>
+      <input class="mono" id="exparamsec-${p.id}" data-secparam="${p.id}" value="${params[p.id]}" inputmode="numeric"/></div>`
+  ).join('');
+
+  const completedCount = steps.filter(s => revealed[s.id]).length;
+  const pct = steps.length > 0 ? Math.round(completedCount / steps.length * 100) : 0;
+  document.getElementById('exerciseProgressBarSec').style.width = `${pct}%`;
+  document.getElementById('exerciseProgressLabelSec').textContent = `Passaggi completati: ${completedCount} / ${steps.length}`;
+
+  document.getElementById('exerciseStepsContainerSec').innerHTML = buildExerciseStepsHTML(steps, answers, revealed, SEC_EX.stepIndex)
+    .replace(/data-checkstep=/g, 'data-checkstepsec=')
+    .replace(/data-showstep=/g, 'data-showstepsec=')
+    .replace(/data-stepidx=/g, 'data-secstepidx=')
+    .replace(/id="exstep-input-/g, 'id="exstepsecinput-')
+    .replace(/id="exstep-/g, 'id="exstepsec-');
+
+  const allDone = steps.length > 0 && steps.every(s => revealed[s.id]);
+  const allCorrect = allDone && steps.every(s => String(answers[s.id] || '').trim() === s.answer);
+  const banner = document.getElementById('exerciseCompletionBannerSec');
+  if (allDone) {
+    banner.style.display = '';
+    banner.innerHTML = allCorrect
+      ? `<strong>Ottimo! Tutti i passaggi corretti ✓</strong> Premi "Nuovo esercizio" per una nuova sessione.`
+      : `<strong>Esercizio completato.</strong> Riprova con "Nuovo esercizio" per consolidare.`;
+    banner.className = allCorrect ? 'callout' : 'callout callout-warn';
+  } else { banner.style.display = 'none'; }
+}
+
+document.getElementById('exerciseBodySec').addEventListener('click', e => {
+  const algoId = SEC_EX.algoId;
+  const steps = SEC_EX.steps;
+  const answers = SEC_EX.answers[algoId];
+  const revealed = SEC_EX.revealed[algoId];
+
+  const checkBtn = e.target.closest('[data-checkstepsec]');
   if (checkBtn) {
-    const idx = +checkBtn.dataset.checkstep;
+    const idx = +checkBtn.dataset.checkstepsec;
     const step = steps[idx];
-    const inputEl = document.getElementById(`exstep-input-${idx}`);
+    const inputEl = document.getElementById(`exstepsecinput-${idx}`);
     const val = inputEl ? inputEl.value : '';
     answers[step.id] = val;
     revealed[step.id] = true;
     const correct = String(val).trim() === step.answer;
-    if (correct && S.exerciseStepIndex === idx) S.exerciseStepIndex = Math.min(idx + 1, steps.length - 1);
-    renderExerciseFull();
+    if (correct && SEC_EX.stepIndex === idx) SEC_EX.stepIndex = Math.min(idx + 1, steps.length - 1);
+    renderExerciseSection();
     return;
   }
-
-  // Mostra risposta button
-  const showBtn = e.target.closest('[data-showstep]');
+  const showBtn = e.target.closest('[data-showstepsec]');
   if (showBtn) {
-    const idx = +showBtn.dataset.showstep;
+    const idx = +showBtn.dataset.showstepsec;
     const step = steps[idx];
     answers[step.id] = step.answer;
     revealed[step.id] = true;
-    if (S.exerciseStepIndex === idx) S.exerciseStepIndex = Math.min(idx + 1, steps.length - 1);
-    renderExerciseFull();
+    if (SEC_EX.stepIndex === idx) SEC_EX.stepIndex = Math.min(idx + 1, steps.length - 1);
+    renderExerciseSection();
     return;
   }
 });
 
-// Live input capture
-document.getElementById('exerciseBody').addEventListener('input', e => {
-  const stepInput = e.target.closest('[data-stepidx]');
-  if (stepInput) {
-    const algoId = ALGORITHMS[S.currentAlgo].id;
-    const step = S.exerciseSteps[+stepInput.dataset.stepidx];
-    if (step) S.exerciseAnswers[algoId][step.id] = stepInput.value;
+document.getElementById('exerciseBodySec').addEventListener('input', e => {
+  const inp = e.target.closest('[data-secstepidx]');
+  if (inp) {
+    const algoId = SEC_EX.algoId;
+    const step = SEC_EX.steps[+inp.dataset.secstepidx];
+    if (step) SEC_EX.answers[algoId][step.id] = inp.value;
   }
-  const paramInput = e.target.closest('[data-exparam]');
-  if (paramInput) {
-    const algoId = paramInput.dataset.algoex;
-    S.exerciseParams[algoId][paramInput.dataset.exparam] = paramInput.value;
+  const pInp = e.target.closest('[data-secparam]');
+  if (pInp) {
+    const algoId = SEC_EX.algoId;
+    SEC_EX.params[algoId][pInp.dataset.secparam] = pInp.value;
     const ex = EXERCISES[algoId];
-    if (ex) { S.exerciseSteps = ex.buildSteps(S.exerciseParams[algoId]); S.exerciseAnswers[algoId] = {}; S.exerciseRevealed[algoId] = {}; S.exerciseStepIndex = 0; }
-    renderExerciseFull();
+    if (ex) { SEC_EX.steps = ex.buildSteps(SEC_EX.params[algoId]); SEC_EX.answers[algoId] = {}; SEC_EX.revealed[algoId] = {}; SEC_EX.stepIndex = 0; }
+    renderExerciseSection();
   }
 });
 
-// Randomize button
-document.getElementById('exerciseRandomBtn') && document.getElementById('exerciseRandomBtn').addEventListener('click', () => {
-  randomizeExerciseParams();
-  renderExerciseFull();
+document.getElementById('exerciseAlgoSelect').addEventListener('change', e => {
+  initSecEx(e.target.value);
+  renderExerciseSection();
 });
 
-// Reset button
-document.getElementById('exerciseResetBtn') && document.getElementById('exerciseResetBtn').addEventListener('click', () => {
-  resetExerciseProgress();
-  renderExerciseFull();
+document.getElementById('exerciseRandomBtnSec').addEventListener('click', () => {
+  const algoId = SEC_EX.algoId;
+  const ex = EXERCISES[algoId];
+  if (!ex || !ex.generateRandom) return;
+  SEC_EX.params[algoId] = ex.generateRandom();
+  SEC_EX.steps = ex.buildSteps(SEC_EX.params[algoId]);
+  SEC_EX.answers[algoId] = {}; SEC_EX.revealed[algoId] = {}; SEC_EX.stepIndex = 0;
+  renderExerciseSection();
 });
 
-// Override renderExercise globally
-window.renderExercise = renderExerciseFull;
+document.getElementById('exerciseResetBtnSec').addEventListener('click', () => {
+  const algoId = SEC_EX.algoId;
+  const ex = EXERCISES[algoId];
+  SEC_EX.answers[algoId] = {}; SEC_EX.revealed[algoId] = {}; SEC_EX.stepIndex = 0;
+  if (ex) SEC_EX.steps = ex.buildSteps(SEC_EX.params[algoId]);
+  renderExerciseSection();
+});
 
-// Boot exercise panel
-renderExerciseFull();
+// ── Section navigation extension ──────────────────────────────────────────
+const SECTIONS = ['visualizer','attacks','examples','exercises','quiz','teacher','examsheet'];
+document.querySelectorAll('.nav a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const sec = a.dataset.section;
+    document.querySelectorAll('.nav a').forEach(x => x.classList.remove('active'));
+    a.classList.add('active');
+    SECTIONS.forEach(s => {
+      const el = document.getElementById('sec-' + s);
+      if (el) el.classList.toggle('active', s === sec);
+    });
+    if (sec === 'exercises') renderExerciseSection();
+  });
+});
+
+// Initialize standalone exercises for both supported algorithms
+initSecEx('rsa');
+initSecEx('dh');
