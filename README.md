@@ -4,6 +4,8 @@
 
 🔗 **Live demo:** [francescocopelli.github.io/crypto-algorithms-visualizer](https://francescocopelli.github.io/crypto-algorithms-visualizer)
 
+For an internal overview of the JavaScript "agents" that power the app (visualizer, exercises and AI Tutor), see [`agents.md`](./agents.md).
+
 ---
 
 ## What is this?
@@ -109,6 +111,7 @@ crypto-algorithms-visualizer/
 ├── app.js               # Algorithm / attack / quiz data + render logic
 ├── exercise_engine.js   # Step-by-step exercise renderer
 ├── ai_tutor.js          # WebLLM wrapper: init, streaming ask, history, context
+├── agents.md            # Internal docs for JS agents (app/exercises/AI Tutor)
 ├── _config.yml          # GitHub Pages config
 └── data/
     ├── algorithms.json
