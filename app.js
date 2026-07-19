@@ -426,16 +426,18 @@ const EXAM_SHEET = [
 const STORAGE_KEY = 'cav_state_v2';
 function saveState() {
   try {
+    const coteachState = (typeof CT_STATE !== 'undefined') ? CT_STATE : null;
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       theme: document.documentElement.getAttribute('data-theme'),
       currentAlgo: S.currentAlgo,
       quizAnswers: S.quizAnswers,
       quizIndex: S.quizIndex,
       quizCategory: S.quizCategory,
-      coteach: CT_STATE
+      coteach: coteachState
     }));
   } catch (err) {}
 }
+
 function loadState() {
   try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
   catch (err) { return null; }
@@ -723,7 +725,7 @@ function initApp() {
     S.quizAnswers = Array.isArray(stored.quizAnswers) && stored.quizAnswers.length === QUIZ.length ? stored.quizAnswers : S.quizAnswers;
     S.quizIndex = stored.quizIndex || 0;
     S.quizCategory = stored.quizCategory || 'All';
-    if (stored.coteach) {
+    if (stored.coteach && typeof CT_STATE !== 'undefined') {
       CT_STATE.topicIdx = stored.coteach.topicIdx || 0;
       CT_STATE.stepIdx = stored.coteach.stepIdx || 0;
       CT_STATE.answered = stored.coteach.answered || {};
