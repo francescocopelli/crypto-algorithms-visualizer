@@ -208,7 +208,7 @@ var CT_TOPICS = [
   }
 ];
 
-var CT_STATE = { topicIdx: 0, stepIdx: 0, answered: {}, completed: {} };
+window.CT_STATE = window.CT_STATE || { topicIdx: 0, stepIdx: 0, answered: {}, completed: {} };
 
 function renderCoteach() {
   var topic = CT_TOPICS[CT_STATE.topicIdx];
