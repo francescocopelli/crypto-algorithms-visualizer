@@ -4,6 +4,8 @@
 
 🔗 **Live demo:** [francescocopelli.github.io/crypto-algorithms-visualizer](https://francescocopelli.github.io/crypto-algorithms-visualizer)
 
+For an internal overview of the JavaScript "agents" that power the app (visualizer, exercises and AI Tutor), see [`agents.md`](./agents.md).
+
 ---
 
 ## What is this?
@@ -49,11 +51,43 @@ Exam-friendly numeric walkthroughs you can rehearse by hand:
 - ECB image thought experiment
 - ECDH conceptual flow
 
+### ✏️ Exercises
+Interactive step-by-step exercises for RSA and Diffie-Hellman. Enter your answers at each step and get immediate feedback. Use 🎲 to generate random exam-friendly parameters.
+
 ### 🧠 Quiz Mode
 12 multiple-choice questions with immediate feedback and explanations. Topics cover block ciphers, public-key primitives, authentication and attack recognition.
 
+### 💬 Co-Teaching
+Guided lesson flow for 5 algorithm families (RSA, Diffie-Hellman, AES, Hash & MAC, AEAD). Each topic includes multi-step explanations, analogies, embedded check questions and a FAQ accordion.
+
+### 🤖 AI Tutor *(local, privacy-first)*
+An on-device AI assistant powered by **[WebLLM](https://webllm.mlc.ai/)** running **Phi-3.5-mini-instruct** entirely in the browser — no server, no API key, no data ever leaves the device.
+
+- **Context-aware:** system prompt automatically includes the active Co-Teaching topic so the model gives relevant answers
+- **Streaming responses:** text appears word-by-word as it is generated
+- **Persistent chat history:** up to 20 turns per session, automatically trimmed
+- **Topic continuity:** switching Co-Teaching topic injects a context-change note into the conversation without losing history
+- **Download once, run forever:** the model is cached by the browser after the first load (~2.2 GB for Phi-3.5-mini Q4)
+
+> **First-time load:** the model is downloaded from the MLC CDN and cached in the browser's IndexedDB. Subsequent loads are instant.
+
 ### 👩‍🏫 Teacher Mode
 Concise definitions, intuitive analogies and warnings about the most common student misunderstandings — one panel per algorithm family.
+
+### 📋 Exam Sheet
+Quick-reference table for all 9 primitives: confidentiality, integrity, authentication, non-repudiation, typical use cases and secure configurations.
+
+---
+
+## Browser compatibility
+
+| Feature | Chrome 113+ | Firefox 117+ | Safari 17.4+ | Edge 113+ |
+|---|:---:|:---:|:---:|:---:|
+| Core app (visualizer, quiz…) | ✅ | ✅ | ✅ | ✅ |
+| AI Tutor (WebLLM / WebGPU) | ✅ | ❌* | ✅ | ✅ |
+| AI Tutor fallback (WASM) | ✅ | ✅ | ✅ | ✅ |
+
+*Firefox WebGPU support is experimental behind a flag as of mid-2026. The WASM fallback works but is slower.
 
 ---
 
@@ -64,7 +98,7 @@ Concise definitions, intuitive analogies and warnings about the most common stud
 | Markup | Semantic HTML5 |
 | Styles | Plain CSS with custom properties (dark/light theme) |
 | Logic | Vanilla JavaScript (ES2020+), no frameworks |
-| Data | JSON files in `data/` folder |
+| AI inference | [WebLLM](https://webllm.mlc.ai/) · Phi-3.5-mini-instruct-q4f16_1 (local, in-browser) |
 | Deploy | GitHub Pages (static, zero build step) |
 
 ---
@@ -73,9 +107,12 @@ Concise definitions, intuitive analogies and warnings about the most common stud
 
 ```
 crypto-algorithms-visualizer/
-├── index.html        # Shell: header, sections, all CSS
-├── app.js            # All data + render logic
-├── _config.yml       # GitHub Pages config
+├── index.html           # Shell: header, nav, all sections, CSS, WebLLM AI Tutor UI
+├── app.js               # Algorithm / attack / quiz data + render logic
+├── exercise_engine.js   # Step-by-step exercise renderer
+├── ai_tutor.js          # WebLLM wrapper: init, streaming ask, history, context
+├── agents.md            # Internal docs for JS agents (app/exercises/AI Tutor)
+├── _config.yml          # GitHub Pages config
 └── data/
     ├── algorithms.json
     ├── attacks.json
@@ -91,6 +128,8 @@ crypto-algorithms-visualizer/
 Open `index.html` directly in a browser, or visit the [live GitHub Pages site](https://francescocopelli.github.io/crypto-algorithms-visualizer).
 
 No build step, no npm, no bundler required.
+
+For the **AI Tutor**, the first visit downloads the Phi-3.5-mini model (~2.2 GB) and caches it in IndexedDB. After that, the tutor loads instantly on every subsequent visit.
 
 ---
 

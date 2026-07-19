@@ -4,6 +4,12 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Crypto Algorithms Visualizer</title>
+  <meta name="description" content="Visualizer interattivo per algoritmi crittografici: AES, DES, RSA, Diffie-Hellman, hash, MAC, AEAD, ECC. Con quiz, esercizi guidati, exam sheet e co-teaching."/>
+  <meta property="og:title" content="Crypto Algorithms Visualizer"/>
+  <meta property="og:description" content="Allenati su AES, RSA, Diffie-Hellman, hash e AEAD con visualizzazioni, quiz ed esercizi passo-passo."/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:locale" content="it_IT"/>
+  <link rel="icon" href="https://emojiapi.dev/api/v1/1f510.png"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -96,9 +102,8 @@
     h3 { font-size: var(--text-lg); font-weight: 600; margin-bottom: .6rem; }
     .section-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
     .params-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .6rem; }
-    /* Co-Teaching styles */
     .lesson-bubble { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: .75rem; position: relative; }
-    .lesson-bubble::before { content: '🤖'; position: absolute; top: -.6rem; left: 1rem; font-size: 1.1rem; background: var(--bg-card); padding: 0 .25rem; border-radius: 50%; }
+    .lesson-bubble::before { content: '\1F916'; position: absolute; top: -.6rem; left: 1rem; font-size: 1.1rem; background: var(--bg-card); padding: 0 .25rem; border-radius: 50%; }
     .lesson-bubble.analogy { border-color: var(--accent); background: var(--accent-soft); }
     .lesson-bubble.warning { border-color: var(--warn); background: var(--warn-soft); }
     .lesson-bubble.fact { border-color: var(--success); background: var(--success-soft); }
@@ -109,29 +114,55 @@
     .ct-opt.ct-wrong { border-color: var(--danger); background: var(--warn-soft); color: var(--warn); }
     .faq-list { display: flex; flex-direction: column; gap: .4rem; margin-top: .75rem; }
     .faq-item summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; padding: .5rem .75rem; background: var(--bg-surface); border-radius: var(--radius); border: 1px solid var(--border); list-style: none; }
-    .faq-item summary::before { content: '❓ '; }
+    .faq-item summary::before { content: '\2753 '; }
     .faq-item[open] summary { border-color: var(--accent); color: var(--accent); }
     .faq-answer { padding: .6rem .75rem; font-size: var(--text-sm); color: var(--color-text-muted); border-left: 3px solid var(--accent); margin-top: .3rem; }
     .ct-progress-label { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: .3rem; }
+    .ai-tutor-wrap { margin-top: 1.25rem; border: 1px solid var(--accent); border-radius: var(--radius-lg); background: var(--bg-card); overflow: hidden; }
+    .ai-tutor-header { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; padding: .75rem 1rem; border-bottom: 1px solid var(--border); background: var(--accent-soft); }
+    .ai-tutor-header h4 { flex: 1; font-size: var(--text-sm); font-weight: 700; color: var(--accent); margin: 0; }
+    #ai-tutor-load-btn { flex-shrink: 0; }
+    .ai-tutor-progress { font-size: var(--text-xs); color: var(--color-text-muted); width: 100%; }
+    .ai-tutor-progress-bar-track { height: .3rem; background: var(--bg-surface); border-radius: 999px; overflow: hidden; margin-top: .25rem; display: none; }
+    .ai-tutor-progress-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; width: 0%; transition: width .3s ease; }
+    .ai-tutor-suggestions { padding: .6rem 1rem; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+    .ai-tutor-suggestions .label { font-size: var(--text-xs); color: var(--color-text-muted); white-space: nowrap; }
+    .ai-suggestion-btn { font-size: var(--text-xs); padding: .25rem .65rem; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); cursor: pointer; transition: var(--transition); }
+    .ai-suggestion-btn:hover { background: var(--accent); color: #fff; }
+    .ai-tutor-messages { max-height: 320px; overflow-y: auto; padding: .75rem 1rem; display: flex; flex-direction: column; gap: .6rem; }
+    .ai-tutor-messages:empty::before { content: 'Carica il modello e inizia a fare domande sull\'argomento corrente.'; font-size: var(--text-xs); color: var(--color-text-muted); font-style: italic; }
+    .ai-msg { padding: .55rem .8rem; border-radius: var(--radius); font-size: var(--text-sm); line-height: 1.55; max-width: 92%; }
+    .ai-msg.user { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: .15rem; }
+    .ai-msg.assistant { background: var(--bg-surface); border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: .15rem; white-space: pre-wrap; }
+    .ai-msg.assistant.streaming::after { content: '\258B'; animation: blink .7s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .ai-tutor-form { display: flex; gap: .5rem; padding: .65rem 1rem; border-top: 1px solid var(--border); background: var(--bg-surface); }
+    .ai-tutor-form input { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: .4rem .75rem; color: var(--color-text); font-size: var(--text-sm); width: auto; }
+    .ai-tutor-form input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+    .ai-tutor-form button[type=submit] { flex-shrink: 0; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: .4rem .9rem; font-size: var(--text-sm); cursor: pointer; transition: var(--transition); }
+    .ai-tutor-form button[type=submit]:hover { background: var(--accent-hover); }
+    .ai-tutor-form button[type=submit]:disabled { opacity: .5; cursor: not-allowed; }
+    .ai-reset-btn { font-size: var(--text-xs); padding: .25rem .65rem; border-radius: var(--radius); border: 1px solid var(--border); background: transparent; color: var(--color-text-muted); cursor: pointer; transition: var(--transition); }
+    .ai-reset-btn:hover { border-color: var(--danger); color: var(--danger); }
   </style>
 </head>
 <body>
 <div class="app-shell">
   <header>
     <div class="topbar">
-      <h1>🔐 Crypto Algorithms Visualizer</h1>
+      <h1>&#x1F510; Crypto Algorithms Visualizer</h1>
       <span id="modeIndicator" class="badge">Mode: Student</span>
-      <button id="themeBtn" class="btn btn-secondary">🌓 Theme</button>
+      <button id="themeBtn" class="btn btn-secondary">&#x1F313; Theme</button>
     </div>
     <nav class="nav">
-      <a href="#" class="active" data-section="visualizer">🔬 Visualizer</a>
-      <a href="#" data-section="attacks">⚔️ Attack Lab</a>
-      <a href="#" data-section="examples">📖 Examples</a>
-      <a href="#" data-section="exercises">✏️ Exercises</a>
-      <a href="#" data-section="quiz">🧠 Quiz</a>
-      <a href="#" data-section="coteaching">💬 Co-Teaching</a>
-      <a href="#" data-section="teacher">👩‍🏫 Teacher</a>
-      <a href="#" data-section="examsheet">📋 Exam Sheet</a>
+      <a href="#" class="active" data-section="visualizer">&#x1F52C; Visualizer</a>
+      <a href="#" data-section="attacks">&#x2694;&#xFE0F; Attack Lab</a>
+      <a href="#" data-section="examples">&#x1F4D6; Examples</a>
+      <a href="#" data-section="exercises">&#x270F;&#xFE0F; Exercises</a>
+      <a href="#" data-section="quiz">&#x1F9E0; Quiz</a>
+      <a href="#" data-section="coteaching">&#x1F4AC; Co-Teaching</a>
+      <a href="#" data-section="teacher">&#x1F469;&#x200D;&#x1F3EB; Teacher</a>
+      <a href="#" data-section="examsheet">&#x1F4CB; Exam Sheet</a>
     </nav>
   </header>
 
@@ -144,7 +175,7 @@
         <div class="btn-group">
           <button id="modeStudent" class="btn btn-primary">Student</button>
           <button id="modeTeacher" class="btn btn-secondary">Teacher</button>
-          <button id="modeExercise" class="btn btn-secondary">✏️ Exercise</button>
+          <button id="modeExercise" class="btn btn-secondary">&#x270F;&#xFE0F; Exercise</button>
         </div>
       </div>
       <div class="two-col">
@@ -168,9 +199,9 @@
               </div>
               <div id="teacherCallout" class="callout" style="margin-bottom:.75rem"></div>
               <div class="btn-group">
-                <button id="prevStepBtn" class="btn btn-secondary">◀ Prev</button>
-                <button id="nextStepBtn" class="btn btn-primary">Next ▶</button>
-                <button id="resetStepBtn" class="btn btn-secondary">⟳ Reset</button>
+                <button id="prevStepBtn" class="btn btn-secondary">&#x25C0; Prev</button>
+                <button id="nextStepBtn" class="btn btn-primary">Next &#x25B6;</button>
+                <button id="resetStepBtn" class="btn btn-secondary">&#x27F3; Reset</button>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
@@ -190,8 +221,8 @@
                   <p id="exerciseGoal" style="font-size:var(--text-sm);color:var(--color-text-muted);margin-top:.25rem"></p>
                 </div>
                 <div class="btn-group">
-                  <button id="exerciseRandomBtn" class="btn btn-secondary">🎲 Nuovo esercizio</button>
-                  <button id="exerciseResetBtn" class="btn btn-secondary">⟳ Ricomincia</button>
+                  <button id="exerciseRandomBtn" class="btn btn-secondary">&#x1F3B2; Nuovo esercizio</button>
+                  <button id="exerciseResetBtn" class="btn btn-secondary">&#x27F3; Ricomincia</button>
                 </div>
               </div>
               <p id="exerciseUnsupported" style="display:none;color:var(--color-text-muted);font-size:var(--text-sm)">Esercizi interattivi disponibili per: RSA e Diffie-Hellman.</p>
@@ -212,7 +243,7 @@
 
     <!-- ATTACKS -->
     <section id="sec-attacks">
-      <h2>⚔️ Attack Lab</h2>
+      <h2>&#x2694;&#xFE0F; Attack Lab</h2>
       <div class="two-col">
         <div class="sidebar-list" id="attackList"></div>
         <div class="card">
@@ -233,7 +264,7 @@
 
     <!-- EXAMPLES -->
     <section id="sec-examples">
-      <h2>📖 Guided Examples</h2>
+      <h2>&#x1F4D6; Guided Examples</h2>
       <div class="two-col">
         <div class="sidebar-list" id="exampleList"></div>
         <div class="card">
@@ -252,8 +283,8 @@
     <!-- EXERCISES -->
     <section id="sec-exercises">
       <div class="section-header">
-        <h2>✏️ Exercises</h2>
-        <p style="font-size:var(--text-sm);color:var(--color-text-muted)">Premi 🎲 per parametri casuali. Risolvi ogni passo e ricevi feedback immediato.</p>
+        <h2>&#x270F;&#xFE0F; Exercises</h2>
+        <p style="font-size:var(--text-sm);color:var(--color-text-muted)">Premi &#x1F3B2; per parametri casuali. Risolvi ogni passo e ricevi feedback immediato.</p>
       </div>
       <div class="card">
         <div class="section-header">
@@ -266,8 +297,8 @@
               <option value="rsa">RSA</option>
               <option value="dh">Diffie-Hellman</option>
             </select>
-            <button id="exerciseRandomBtnSec" class="btn btn-secondary">🎲 Nuovo esercizio</button>
-            <button id="exerciseResetBtnSec" class="btn btn-secondary">⟳ Ricomincia</button>
+            <button id="exerciseRandomBtnSec" class="btn btn-secondary">&#x1F3B2; Nuovo esercizio</button>
+            <button id="exerciseResetBtnSec" class="btn btn-secondary">&#x27F3; Ricomincia</button>
           </div>
         </div>
         <div id="exerciseBodySec">
@@ -285,7 +316,7 @@
     <!-- QUIZ -->
     <section id="sec-quiz">
       <div class="section-header">
-        <h2>🧠 Quiz</h2>
+        <h2>&#x1F9E0; Quiz</h2>
         <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
           <select id="quizCategoryFilter" class="btn btn-secondary" style="padding:.4rem .75rem"></select>
           <span id="quizTimer" class="badge">0s</span>
@@ -303,9 +334,9 @@
           <div id="quizExplanation" class="callout" style="margin-top:.75rem;font-size:var(--text-sm)"></div>
           <div id="quizCompletionMsg" class="callout" style="display:none;margin-top:.75rem"></div>
           <div class="btn-group" style="margin-top:.75rem">
-            <button id="prevQuizBtn" class="btn btn-secondary">◀ Prev</button>
-            <button id="nextQuizBtn" class="btn btn-primary">Next ▶</button>
-            <button id="restartQuizBtn" class="btn btn-secondary">⟳ Restart</button>
+            <button id="prevQuizBtn" class="btn btn-secondary">&#x25C0; Prev</button>
+            <button id="nextQuizBtn" class="btn btn-primary">Next &#x25B6;</button>
+            <button id="restartQuizBtn" class="btn btn-secondary">&#x27F3; Restart</button>
           </div>
         </div>
         <div class="card">
@@ -322,11 +353,10 @@
     <!-- CO-TEACHING -->
     <section id="sec-coteaching">
       <div class="section-header">
-        <h2>💬 Co-Teaching</h2>
+        <h2>&#x1F4AC; Co-Teaching</h2>
         <p style="font-size:var(--text-sm);color:var(--color-text-muted)">Il tutor ti guida passo dopo passo. Rispondi alle domande di verifica e consulta le FAQ.</p>
       </div>
       <div class="two-col">
-        <!-- Sidebar argomenti -->
         <div>
           <div class="sidebar-list" id="coteachList"></div>
           <div class="card" style="margin-top:.75rem">
@@ -334,7 +364,6 @@
             <div id="ctProgressSummary" style="margin-top:.5rem;display:flex;flex-direction:column;gap:.3rem"></div>
           </div>
         </div>
-        <!-- Pannello lezione -->
         <div id="coteachPanel">
           <div class="card" style="margin-bottom:.75rem">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem">
@@ -343,20 +372,39 @@
                 <span id="ctTopicTag" class="badge primary" style="margin-top:.25rem"></span>
               </div>
               <div class="btn-group">
-                <button id="ctPrevBtn" class="btn btn-secondary">◀ Indietro</button>
-                <button id="ctNextBtn" class="btn btn-primary">Avanti ▶</button>
-                <button id="ctRestartBtn" class="btn btn-secondary">⟳ Riparti</button>
+                <button id="ctPrevBtn" class="btn btn-secondary">&#x25C0; Indietro</button>
+                <button id="ctNextBtn" class="btn btn-primary">Avanti &#x25B6;</button>
+                <button id="ctRestartBtn" class="btn btn-secondary">&#x27F3; Riparti</button>
               </div>
             </div>
             <div class="ct-progress-label"><span id="ctStepLabel">Passo 1 / 1</span></div>
             <div class="progress-bar" style="margin-bottom:.75rem"><div class="progress-fill" id="ctProgressBar" style="width:0%"></div></div>
-            <!-- Contenuto lezione generato da JS -->
             <div id="ctLessonContent"></div>
           </div>
-          <!-- FAQ accordion -->
           <div class="card">
-            <h4>❓ Domande frequenti su questo argomento</h4>
+            <h4>&#x2753; Domande frequenti su questo argomento</h4>
             <div class="faq-list" id="ctFaqList"></div>
+          </div>
+          <div class="ai-tutor-wrap" id="aiTutorWrap">
+            <div class="ai-tutor-header">
+              <h4>&#x1F916; AI Tutor &mdash; <span id="aiTopicLabel">&mdash;</span></h4>
+              <button id="ai-tutor-load-btn" class="btn btn-primary">Carica modello AI</button>
+              <button class="ai-reset-btn" id="ai-tutor-reset-btn" title="Azzera cronologia">&#x1F5D1; Reset chat</button>
+            </div>
+            <div style="padding:.4rem 1rem .2rem">
+              <div class="ai-tutor-progress" id="aiProgressText"></div>
+              <div class="ai-tutor-progress-bar-track" id="aiProgressTrack">
+                <div class="ai-tutor-progress-bar-fill" id="aiProgressFill"></div>
+              </div>
+            </div>
+            <div class="ai-tutor-suggestions" id="aiSuggestions">
+              <span class="label">Suggerimenti:</span>
+            </div>
+            <div class="ai-tutor-messages" id="aiMessages"></div>
+            <form class="ai-tutor-form" id="aiForm" autocomplete="off">
+              <input id="aiInput" type="text" placeholder="Scrivi una domanda&#x2026;" />
+              <button type="submit" id="aiSubmitBtn" disabled>Chiedi</button>
+            </form>
           </div>
         </div>
       </div>
@@ -364,475 +412,27 @@
 
     <!-- TEACHER -->
     <section id="sec-teacher">
-      <h2>👩‍🏫 Teacher Mode</h2>
+      <h2>&#x1F469;&#x200D;&#x1F3EB; Teacher Mode</h2>
       <div class="teacher-grid" id="teacherGrid"></div>
     </section>
 
     <!-- EXAM SHEET -->
     <section id="sec-examsheet">
-      <h2>📋 Exam Sheet</h2>
+      <h2>&#x1F4CB; Exam Sheet</h2>
       <div class="exam-grid" id="examSheetGrid"></div>
     </section>
 
   </main>
 </div>
 
-<script src="app.js"></script>
-<script src="exercise_engine.js"></script>
-<script>
-// ── Section navigation ──────────────────────────────────────────────────────
-const SECTIONS = ['visualizer','attacks','examples','exercises','quiz','coteaching','teacher','examsheet'];
-document.querySelectorAll('.nav a').forEach(a => {
-  a.addEventListener('click', e => {
-    e.preventDefault();
-    const sec = a.dataset.section;
-    document.querySelectorAll('.nav a').forEach(x => x.classList.remove('active'));
-    a.classList.add('active');
-    SECTIONS.forEach(s => {
-      const el = document.getElementById('sec-' + s);
-      if (el) el.classList.toggle('active', s === sec);
-    });
-    if (sec === 'exercises') renderExerciseSection();
-    if (sec === 'coteaching') renderCoteach();
-  });
-});
-
-// ── Standalone Exercises ────────────────────────────────────────────────────
-const SEC_EX = {
-  algoId: 'rsa', params: {}, steps: [], stepIndex: 0, answers: {}, revealed: {}
-};
-function initSecEx(algoId) {
-  SEC_EX.algoId = algoId;
-  const ex = EXERCISES[algoId];
-  if (!ex) return;
-  if (!SEC_EX.params[algoId]) {
-    SEC_EX.params[algoId] = {};
-    ex.params.forEach(p => { SEC_EX.params[algoId][p.id] = p.default; });
-  }
-  SEC_EX.steps = ex.buildSteps(SEC_EX.params[algoId]);
-  SEC_EX.stepIndex = 0;
-  SEC_EX.answers[algoId] = SEC_EX.answers[algoId] || {};
-  SEC_EX.revealed[algoId] = SEC_EX.revealed[algoId] || {};
-}
-function renderExerciseSection() {
-  const algoId = SEC_EX.algoId;
-  const ex = EXERCISES[algoId];
-  if (!ex) return;
-  if (!SEC_EX.steps || SEC_EX.steps.length === 0) initSecEx(algoId);
-  const params = SEC_EX.params[algoId], answers = SEC_EX.answers[algoId], revealed = SEC_EX.revealed[algoId], steps = SEC_EX.steps;
-  document.getElementById('exerciseTitleSec').textContent = ex.title;
-  document.getElementById('exerciseGoalSec').textContent = ex.goal;
-  document.getElementById('exerciseAlgoSelect').value = algoId;
-  document.getElementById('exerciseParamsSec').innerHTML = ex.params.map(p =>
-    `<div class="field"><label for="exparamsec-${p.id}">${p.label}</label><input class="mono" id="exparamsec-${p.id}" data-secparam="${p.id}" value="${params[p.id]}" inputmode="numeric"/></div>`
-  ).join('');
-  const completedCount = steps.filter(s => revealed[s.id]).length;
-  const pct = steps.length > 0 ? Math.round(completedCount / steps.length * 100) : 0;
-  document.getElementById('exerciseProgressBarSec').style.width = `${pct}%`;
-  document.getElementById('exerciseProgressLabelSec').textContent = `Passaggi completati: ${completedCount} / ${steps.length}`;
-  document.getElementById('exerciseStepsContainerSec').innerHTML = buildExerciseStepsHTML(steps, answers, revealed, SEC_EX.stepIndex)
-    .replace(/data-checkstep=/g,'data-checkstepsec=').replace(/data-showstep=/g,'data-showstepsec=')
-    .replace(/data-stepidx=/g,'data-secstepidx=').replace(/id="exstep-input-/g,'id="exstepsecinput-').replace(/id="exstep-/g,'id="exstepsec-');
-  const allDone = steps.length > 0 && steps.every(s => revealed[s.id]);
-  const allCorrect = allDone && steps.every(s => String(answers[s.id]||'').trim() === s.answer);
-  const banner = document.getElementById('exerciseCompletionBannerSec');
-  if (allDone) {
-    banner.style.display = '';
-    banner.innerHTML = allCorrect ? `<strong>Ottimo! Tutti i passaggi corretti ✓</strong>` : `<strong>Esercizio completato.</strong> Riprova per consolidare.`;
-    banner.className = allCorrect ? 'callout' : 'callout callout-warn';
-  } else { banner.style.display = 'none'; }
-}
-document.getElementById('exerciseBodySec').addEventListener('click', e => {
-  const algoId = SEC_EX.algoId, steps = SEC_EX.steps, answers = SEC_EX.answers[algoId], revealed = SEC_EX.revealed[algoId];
-  const checkBtn = e.target.closest('[data-checkstepsec]');
-  if (checkBtn) {
-    const idx = +checkBtn.dataset.checkstepsec, step = steps[idx];
-    const val = (document.getElementById(`exstepsecinput-${idx}`) || {}).value || '';
-    answers[step.id] = val; revealed[step.id] = true;
-    if (String(val).trim() === step.answer && SEC_EX.stepIndex === idx) SEC_EX.stepIndex = Math.min(idx+1, steps.length-1);
-    renderExerciseSection(); return;
-  }
-  const showBtn = e.target.closest('[data-showstepsec]');
-  if (showBtn) {
-    const idx = +showBtn.dataset.showstepsec, step = steps[idx];
-    answers[step.id] = step.answer; revealed[step.id] = true;
-    if (SEC_EX.stepIndex === idx) SEC_EX.stepIndex = Math.min(idx+1, steps.length-1);
-    renderExerciseSection(); return;
-  }
-});
-document.getElementById('exerciseBodySec').addEventListener('input', e => {
-  const inp = e.target.closest('[data-secstepidx]');
-  if (inp) { const step = SEC_EX.steps[+inp.dataset.secstepidx]; if (step) SEC_EX.answers[SEC_EX.algoId][step.id] = inp.value; }
-  const pInp = e.target.closest('[data-secparam]');
-  if (pInp) {
-    const algoId = SEC_EX.algoId;
-    SEC_EX.params[algoId][pInp.dataset.secparam] = pInp.value;
-    const ex = EXERCISES[algoId];
-    if (ex) { SEC_EX.steps = ex.buildSteps(SEC_EX.params[algoId]); SEC_EX.answers[algoId]={}; SEC_EX.revealed[algoId]={}; SEC_EX.stepIndex=0; }
-    renderExerciseSection();
-  }
-});
-document.getElementById('exerciseAlgoSelect').addEventListener('change', e => { initSecEx(e.target.value); renderExerciseSection(); });
-document.getElementById('exerciseRandomBtnSec').addEventListener('click', () => {
-  const algoId = SEC_EX.algoId, ex = EXERCISES[algoId];
-  if (!ex || !ex.generateRandom) return;
-  SEC_EX.params[algoId] = ex.generateRandom();
-  SEC_EX.steps = ex.buildSteps(SEC_EX.params[algoId]);
-  SEC_EX.answers[algoId]={}; SEC_EX.revealed[algoId]={}; SEC_EX.stepIndex=0;
-  renderExerciseSection();
-});
-document.getElementById('exerciseResetBtnSec').addEventListener('click', () => {
-  const algoId = SEC_EX.algoId, ex = EXERCISES[algoId];
-  SEC_EX.answers[algoId]={}; SEC_EX.revealed[algoId]={}; SEC_EX.stepIndex=0;
-  if (ex) SEC_EX.steps = ex.buildSteps(SEC_EX.params[algoId]);
-  renderExerciseSection();
-});
-initSecEx('rsa'); initSecEx('dh');
-
-// ── Co-Teaching ─────────────────────────────────────────────────────────────
-const CT_TOPICS = [
-  {
-    id: 'rsa', label: 'RSA', tag: 'Chiave pubblica',
-    steps: [
-      {
-        type: 'intro',
-        html: `<div class="lesson-bubble">Ciao! Parliamo di <strong>RSA</strong>, l'algoritmo a chiave pubblica più famoso. L'idea di base è semplice: usi una chiave pubblica per cifrare e una privata per decifrare.</div>
-<div class="lesson-bubble analogy"><strong>Analogia 📦</strong> Immagina un lucchetto aperto che chiunque può usare per chiudere una cassetta (cifrare). Solo tu hai la chiave per aprirla (decifrare).</div>`,
-        question: null
-      },
-      {
-        type: 'keygen',
-        html: `<div class="lesson-bubble"><strong>Generazione delle chiavi</strong><br>Scegli due primi <em>p</em> e <em>q</em>, calcola <em>n = p·q</em> e la funzione di Eulero <em>φ(n) = (p−1)(q−1)</em>. Scegli <em>e</em> con gcd(e, φ(n)) = 1, poi trova <em>d</em> = inverso di <em>e</em> mod φ(n) con l'EEA.</div>
-<div class="lesson-bubble fact"><strong>Fatto chiave 🔑</strong> La chiave pubblica è (n, e); la chiave privata è (n, d). Il segreto sta nell'impossibilità di fattorizzare n in tempi ragionevoli.</div>`,
-        question: {
-          text: 'Quale operazione garantisce che d esista?',
-          opts: ['d = n mod e', 'gcd(e, φ(n)) = 1', 'e < n', 'p · q > 100'],
-          correct: 1,
-          explanation: 'Serve gcd(e, φ(n)) = 1 per garantire l\'esistenza dell\'inverso modulare di e, da cui si ricava d con l\'algoritmo esteso di Euclide.'
-        }
-      },
-      {
-        type: 'enc_dec',
-        html: `<div class="lesson-bubble"><strong>Cifratura e decifratura</strong><br>Cifratura: <em>c = m<sup>e</sup> mod n</em>.<br>Decifratura: <em>m = c<sup>d</sup> mod n</em>.<br>Funziona grazie al Teorema di Eulero: m<sup>ed</sup> ≡ m (mod n) quando m &lt; n.</div>
-<div class="lesson-bubble warning"><strong>Attenzione ⚠️</strong> RSA testbook è <em>deterministico</em>: stesso messaggio → stesso cifrato. Per uso reale serve padding randomizzato (OAEP).</div>`,
-        question: {
-          text: 'Cosa succede se si usa lo stesso k per cifrare due messaggi diversi in RSA testbook?',
-          opts: ['Niente di speciale', 'I ciphertext sono identici se i messaggi sono uguali', 'La chiave privata trapela', 'n viene fattorizzato'],
-          correct: 1,
-          explanation: 'RSA testbook è deterministico: messaggi identici producono cifrati identici, rendendo visibile la struttura del testo in chiaro.'
-        }
-      },
-      {
-        type: 'summary',
-        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo RSA ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Chiave pubblica: (n, e) — distribuita liberamente</li><li>Chiave privata: (n, d) — tenuta segreta</li><li>Sicurezza basata sulla difficoltà di fattorizzare n</li><li>In produzione: sempre OAEP o PSS, mai testbook RSA</li></ul></div>`,
-        question: null
-      }
-    ],
-    faqs: [
-      { q: 'Perché si usano numeri primi per p e q?', a: 'La funzione di Eulero per n=p·q è (p−1)(q−1) solo se p e q sono primi. Questo permette di calcolare φ(n) in modo semplice conoscendo la fattorizzazione, ma rende impossibile calcolarlo conoscendo solo n.' },
-      { q: 'Come si calcola d nella pratica?', a: 'Con l\'algoritmo esteso di Euclide (EEA) applicato a (e, φ(n)). Si trovano i coefficienti di Bézout x, y tali che e·x + φ(n)·y = 1; allora d = x mod φ(n).' },
-      { q: 'RSA cifra direttamente file grandi?', a: 'No. RSA in pratica cifra solo una chiave simmetrica (es. AES), che poi viene usata per i dati. Questo schema si chiama crittografia ibrida.' },
-      { q: 'Cosa differenzia RSA-OAEP da RSA testbook?', a: 'OAEP aggiunge padding randomizzato prima della cifratura, rompendo il determinismo e rendendo RSA semanticamente sicuro contro attacchi a testo in chiaro scelto (CPA).' }
-    ]
-  },
-  {
-    id: 'dh', label: 'Diffie-Hellman', tag: 'Key exchange',
-    steps: [
-      {
-        type: 'intro',
-        html: `<div class="lesson-bubble">Benvenuto in <strong>Diffie-Hellman</strong>! Questo protocollo permette a due parti di concordare un segreto condiviso su un canale pubblico, senza mai trasmettere il segreto stesso.</div>
-<div class="lesson-bubble analogy"><strong>Analogia 🎨</strong> Alice e Bob mescolano un colore segreto con un colore pubblico. Scambiano i risultati e ciascuno aggiunge di nuovo il proprio colore segreto: ottengono la stessa tinta finale, ma un osservatore non può ricostruirla.</div>`,
-        question: null
-      },
-      {
-        type: 'protocol',
-        html: `<div class="lesson-bubble"><strong>Il protocollo passo per passo</strong><br>1. Concordano pubblicamente <em>p</em> (primo) e <em>g</em> (generatore).<br>2. Alice sceglie segreto <em>a</em>, pubblica <em>A = g<sup>a</sup> mod p</em>.<br>3. Bob sceglie segreto <em>b</em>, pubblica <em>B = g<sup>b</sup> mod p</em>.<br>4. Alice calcola <em>K = B<sup>a</sup> mod p</em>; Bob calcola <em>K = A<sup>b</sup> mod p</em>. Stesso K!</div>
-<div class="lesson-bubble fact"><strong>Perché funziona? 🔢</strong> B<sup>a</sup> = (g<sup>b</sup>)<sup>a</sup> = g<sup>ab</sup> = (g<sup>a</sup>)<sup>b</sup> = A<sup>b</sup>. La commutatività degli esponenti garantisce lo stesso risultato.</div>`,
-        question: {
-          text: 'Cosa deve rimanere segreto in DH?',
-          opts: ['p e g', 'A e B (i valori pubblici)', 'a e b (gli esponenti privati)', 'Il risultato finale K'],
-          correct: 2,
-          explanation: 'p, g, A e B possono essere tutti pubblici. Solo gli esponenti privati a e b devono restare segreti: senza di essi un attaccante non può calcolare K.'
-        }
-      },
-      {
-        type: 'threat',
-        html: `<div class="lesson-bubble warning"><strong>Vulnerabilità MITM ⚠️</strong> DH da solo non autentica le parti! Un man-in-the-middle può intercettare e sostituire A e B, stabilendo chiavi separate con Alice e Bob senza che nessuno se ne accorga.</div>
-<div class="lesson-bubble"><strong>Contromisura</strong> Autenticare i valori pubblici con firme digitali o certificati (come in TLS). DH autenticato diventa lo scambio di chiavi sicuro.</div>`,
-        question: {
-          text: 'Perché DH senza autenticazione è vulnerabile a MITM?',
-          opts: ['Perché p è troppo piccolo', 'Perché le parti non verificano l\'identità di chi invia A e B', 'Perché K è prevedibile', 'Perché g deve essere segreto'],
-          correct: 1,
-          explanation: 'Senza autenticazione nulla garantisce che A provenga davvero da Alice o B da Bob. Un attaccante può inserirsi nel mezzo e stabilire due chiavi distinte.'
-        }
-      },
-      {
-        type: 'summary',
-        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo DH ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Parametri pubblici: p, g, A, B</li><li>Segreti: a (Alice), b (Bob)</li><li>Segreto condiviso: K = g<sup>ab</sup> mod p</li><li>Sicurezza basata sul Problema del Logaritmo Discreto (DLP)</li><li>Senza autenticazione → vulnerabile a MITM</li></ul></div>`,
-        question: null
-      }
-    ],
-    faqs: [
-      { q: 'Cosa rende sicuro il DLP?', a: 'Dato g, p e A = g^a mod p, trovare a è computazionalmente difficile con p grande (es. 2048 bit). I migliori algoritmi noti (index calculus) non scalano efficientemente.' },
-      { q: 'Qual è la differenza tra DH e ECDH?', a: 'ECDH sostituisce il gruppo moltiplicativo mod p con i punti di una curva ellittica. La moltiplicazione scalare sostituisce l\'esponenziazione, offrendo sicurezza equivalente con chiavi molto più corte.' },
-      { q: 'DH genera una chiave di sessione o permanente?', a: 'In genere genera una chiave di sessione effimera (ephemeral DH / DHE), diversa ad ogni connessione. Questo garantisce la forward secrecy: la compromissione di una chiave passata non espone le comunicazioni future.' },
-      { q: 'Come si usa DH in TLS?', a: 'In TLS 1.3, ECDHE (DH su curva ellittica, effimero) è obbligatorio per lo scambio di chiavi. I valori pubblici vengono autenticati con la firma del certificato del server.' }
-    ]
-  },
-  {
-    id: 'aes', label: 'AES', tag: 'Block cipher',
-    steps: [
-      {
-        type: 'intro',
-        html: `<div class="lesson-bubble">AES (<strong>Advanced Encryption Standard</strong>) è il cifrario a blocchi simmetrico più usato al mondo. Cifra blocchi da 128 bit con chiavi da 128, 192 o 256 bit attraverso 10–14 round.</div>
-<div class="lesson-bubble analogy"><strong>Analogia 🧩</strong> Ogni round rimescola, sostituisce e mescola i pezzi del puzzle in modo diverso. Dopo abbastanza round, il messaggio originale è completamente mascherato.</div>`,
-        question: null
-      },
-      {
-        type: 'rounds',
-        html: `<div class="lesson-bubble"><strong>Le 4 trasformazioni del round AES</strong><br><strong>1. AddRoundKey</strong>: XOR con la sottochiave del round (mixing della chiave).<br><strong>2. SubBytes</strong>: ogni byte viene sostituito via S-box (non-linearità).<br><strong>3. ShiftRows</strong>: le righe vengono ruotate (diffusione posizionale).<br><strong>4. MixColumns</strong>: le colonne vengono mescolate via GF(2⁸) (diffusione completa).</div>
-<div class="lesson-bubble fact"><strong>Confusione vs Diffusione 🎯</strong> SubBytes crea confusione (relazione complessa chiave-cifrato); MixColumns + ShiftRows creano diffusione (un bit di input influenza molti bit di output).</div>`,
-        question: {
-          text: 'Quale trasformazione AES introduce la non-linearità?',
-          opts: ['AddRoundKey', 'ShiftRows', 'SubBytes', 'MixColumns'],
-          correct: 2,
-          explanation: 'SubBytes applica la S-box non-lineare a ogni byte. Senza non-linearità AES sarebbe un sistema affine, facilmente attaccabile con algebra lineare.'
-        }
-      },
-      {
-        type: 'modes',
-        html: `<div class="lesson-bubble"><strong>Modalità operative</strong><br>AES da solo cifra un singolo blocco. Per dati lunghi servono modalità:<br>• <strong>ECB</strong>: blocchi indipendenti — insicuro, rivela pattern.<br>• <strong>CBC</strong>: ogni blocco XOR col precedente — no pattern, ma no integrità.<br>• <strong>GCM</strong>: cifratura + autenticazione in un colpo — la scelta moderna.</div>
-<div class="lesson-bubble warning"><strong>Errore comune ⚠️</strong> ECB è insicuro per dati strutturati: blocchi uguali → cifrati uguali. L\'immagine del pinguino ECB è il caso studio più famoso.</div>`,
-        question: {
-          text: 'Perché ECB è considerato insicuro per dati strutturati?',
-          opts: ['Chiave troppo corta', 'Blocchi uguali producono cifrati uguali', 'Non usa XOR', 'Non ha AddRoundKey'],
-          correct: 1,
-          explanation: 'ECB cifra ogni blocco in modo indipendente e deterministico: blocchi di plaintext identici danno sempre lo stesso ciphertext, rivelando la struttura del messaggio originale.'
-        }
-      },
-      {
-        type: 'summary',
-        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo AES ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Cifrario simmetrico a blocchi (128 bit)</li><li>4 trasformazioni per round: AddRoundKey, SubBytes, ShiftRows, MixColumns</li><li>Non-linearità da SubBytes; diffusione da MixColumns + ShiftRows</li><li>Per uso reale: AES-GCM o AES-CTR+HMAC. Mai ECB su dati strutturati.</li></ul></div>`,
-        question: null
-      }
-    ],
-    faqs: [
-      { q: 'Quanti round ha AES?', a: 'AES-128: 10 round. AES-192: 12 round. AES-256: 14 round. L\'ultimo round non include MixColumns.' },
-      { q: 'Cosa succede se si riusa un IV in CBC?', a: 'Un IV ripetuto con la stessa chiave permette attacchi per recuperare informazioni sul plaintext, in particolare il primo blocco diventa prevedibile.' },
-      { q: 'AES-GCM fornisce anche integrità?', a: 'Sì. GCM è un modo AEAD: cifra e autentica in un unico passaggio, producendo un authentication tag che rileva qualsiasi modifica al ciphertext o ai dati associati.' },
-      { q: 'Perché l\'ultimo round AES non ha MixColumns?', a: 'Per ragioni di simmetria nella struttura matematica dell\'inverso: rimuovere MixColumns dall\'ultimo round rende la decifratura strutturalmente identica alla cifratura, semplificando le implementazioni hardware.' }
-    ]
-  },
-  {
-    id: 'hash', label: 'Hash & MAC', tag: 'Integrità',
-    steps: [
-      {
-        type: 'intro',
-        html: `<div class="lesson-bubble">Le <strong>funzioni hash crittografiche</strong> trasformano dati di lunghezza arbitraria in un digest di dimensione fissa. Sono one-way: non è possibile risalire all\'input dall\'output.</div>
-<div class="lesson-bubble analogy"><strong>Analogia 🔍</strong> Come un'impronta digitale: identifica univocamente un oggetto, ma non si può ricostruire l'oggetto dall'impronta.</div>`,
-        question: null
-      },
-      {
-        type: 'properties',
-        html: `<div class="lesson-bubble"><strong>Proprietà fondamentali</strong><br>• <strong>Pre-image resistance</strong>: dato H(m), impossibile trovare m.<br>• <strong>Second pre-image resistance</strong>: dato m, impossibile trovare m' ≠ m con H(m')=H(m).<br>• <strong>Collision resistance</strong>: impossibile trovare m, m' con H(m)=H(m').<br>• <strong>Avalanche effect</strong>: un bit di input cambia ≈50% dei bit di output.</div>`,
-        question: {
-          text: 'Quale proprietà afferma che non si può trovare due messaggi distinti con lo stesso hash?',
-          opts: ['Pre-image resistance', 'Collision resistance', 'Avalanche effect', 'Second pre-image resistance'],
-          correct: 1,
-          explanation: 'La collision resistance garantisce che sia computazionalmente impossibile trovare due input m ≠ m\' con H(m) = H(m\'). È la proprietà più forte delle tre.'
-        }
-      },
-      {
-        type: 'mac',
-        html: `<div class="lesson-bubble"><strong>Hash vs MAC</strong><br>Un hash senza chiave fornisce solo un'impronta pubblica — chiunque può calcolarla. Un <strong>MAC</strong> (Message Authentication Code) aggiunge una chiave segreta: solo chi conosce la chiave può generare o verificare il tag.</div>
-<div class="lesson-bubble fact"><strong>HMAC</strong> è la costruzione standard: HMAC(K, m) = H(K ⊕ opad ∥ H(K ⊕ ipad ∥ m)). Evita l\'attacco di length-extension delle costruzioni naive.</div>`,
-        question: {
-          text: 'Perché un semplice H(chiave ∥ messaggio) non è sicuro come HMAC?',
-          opts: ['È troppo lento', 'È vulnerabile ad attacchi di length-extension', 'Non usa XOR', 'La chiave è troppo corta'],
-          correct: 1,
-          explanation: 'Le funzioni hash basate su Merkle-Damgård (SHA-256, SHA-1...) sono vulnerabili al length-extension: un attaccante può estendere il messaggio e calcolare un tag valido senza conoscere la chiave. HMAC neutralizza questo con la struttura a doppio hash.'
-        }
-      },
-      {
-        type: 'summary',
-        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo Hash & MAC ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Hash: one-way, senza chiave, impronta pubblica</li><li>MAC: keyed hash, fornisce autenticazione e integrità</li><li>HMAC è la costruzione standard sicura</li><li>MD5 e SHA-1 sono obsoleti — usare SHA-256 o SHA-3</li></ul></div>`,
-        question: null
-      }
-    ],
-    faqs: [
-      { q: 'SHA-256 è ancora sicuro?', a: 'Sì. A oggi non sono note collisioni pratiche su SHA-256. È lo standard de facto per integrità e HMAC. SHA-3 (Keccak) è l\'alternativa moderna basata su un design diverso (sponge construction).' },
-      { q: 'Cosa distingue CMAC da HMAC?', a: 'HMAC si basa su una funzione hash (es. SHA-256); CMAC si basa su un cifrario a blocchi (es. AES). Entrambi forniscono autenticazione sicura, ma CMAC è preferito in contesti hardware dove AES è già disponibile.' },
-      { q: 'Un hash garantisce autenticità?', a: 'No. Un hash senza chiave dice solo che i dati non sono stati corrotti accidentalmente — non che provengano da una fonte fidata. Per autenticità serve un MAC (chiave condivisa) o una firma digitale (chiave pubblica).' },
-      { q: 'Cos\'è il birthday attack?', a: 'Sfrutta il paradosso del compleanno: per trovare una collisione su un hash di n bit bastano ≈2^(n/2) tentativi, non 2^n. Per SHA-256, la sicurezza contro collisioni è 128 bit, non 256.' }
-    ]
-  },
-  {
-    id: 'aead', label: 'AEAD', tag: 'Conf + integrità',
-    steps: [
-      {
-        type: 'intro',
-        html: `<div class="lesson-bubble"><strong>AEAD</strong> (Authenticated Encryption with Associated Data) combina confidenzialità e integrità in un unico primitivo. Esempi: AES-GCM, ChaCha20-Poly1305.</div>
-<div class="lesson-bubble analogy"><strong>Analogia 📦🔒</strong> Non è solo una cassaforte (confidenzialità) — è una cassaforte con sigillo antimanomissione (autenticazione). Se qualcuno tocca la cassaforte, il sigillo si rompe e lo sai.</div>`,
-        question: null
-      },
-      {
-        type: 'nonce',
-        html: `<div class="lesson-bubble"><strong>Il ruolo del nonce</strong><br>Il nonce (number used once) deve essere unico per ogni cifratura con la stessa chiave. In AES-GCM è tipicamente 96 bit. Non ha bisogno di essere segreto, ma non può mai ripetersi.</div>
-<div class="lesson-bubble warning"><strong>Nonce reuse = disastro ⚠️</strong> Riusare nonce + chiave rivela relazioni tra plaintexts e distrugge l\'autenticità. Due ciphertext con lo stesso nonce: C1 ⊕ C2 = P1 ⊕ P2.</div>`,
-        question: {
-          text: 'Cosa succede se si riusa lo stesso nonce con la stessa chiave in AES-GCM?',
-          opts: ['Rallenta la cifratura', 'Espone la XOR dei plaintexts e rompe l\'autenticazione', 'Il tag diventa più lungo', 'Non succede nulla'],
-          correct: 1,
-          explanation: 'Il riuso di nonce in modalità stream-like (GCM) produce lo stesso keystream: XOR di due ciphertext dà la XOR dei plaintext. Inoltre il tag di autenticazione può essere falsificato.'
-        }
-      },
-      {
-        type: 'verify_first',
-        html: `<div class="lesson-bubble"><strong>Verify-then-decrypt</strong><br>La regola d\'oro AEAD: verifica sempre il tag <em>prima</em> di usare il plaintext. Decifrare prima e verificare dopo espone a oracle attack (padding oracle, decryption oracle).</div>
-<div class="lesson-bubble fact"><strong>AAD (Associated Data)</strong> Dati autenticati ma non cifrati — es. header di rete. Garantisce che anche i metadati non vengano modificati, senza dover cifrare l\'intero pacchetto.</div>`,
-        question: {
-          text: 'Qual è l\'ordine corretto nell\'elaborazione di un messaggio AEAD?',
-          opts: ['Decifra, poi verifica il tag', 'Verifica il tag, poi decifra', 'Cifra il tag, poi decifra', 'Ignora il tag se la chiave è lunga'],
-          correct: 1,
-          explanation: 'Bisogna sempre verificare il tag prima di rilasciare il plaintext. Decifrare prima apre la porta a oracle attack in cui l\'attaccante sfrutta i messaggi di errore per recuperare informazioni.'
-        }
-      },
-      {
-        type: 'summary',
-        html: `<div class="lesson-bubble callout-success"><strong>Riepilogo AEAD ✓</strong><ul style="margin:.5rem 0 0 1rem;font-size:var(--text-sm)"><li>Confidenzialità + integrità + autenticazione in un colpo</li><li>Nonce unico per ogni (chiave, messaggio) — mai riusare</li><li>Sempre verify-then-decrypt</li><li>Scelta moderna: AES-GCM o ChaCha20-Poly1305</li></ul></div>`,
-        question: null
-      }
-    ],
-    faqs: [
-      { q: 'Quando usare AES-GCM vs ChaCha20-Poly1305?', a: 'AES-GCM è preferibile su hardware con istruzioni AES-NI (praticamente tutti i PC e server moderni). ChaCha20-Poly1305 è ottimo su dispositivi embedded o mobile senza accelerazione hardware per AES.' },
-      { q: 'Il tag AEAD protegge anche i dati associati (AAD)?', a: 'Sì. Il tag copre sia il ciphertext che l\'AAD. Se qualcuno modifica anche solo un bit dell\'header (AAD), la verifica del tag fallirà.' },
-      { q: 'Cos\'è AES-SIV e quando si usa?', a: 'AES-SIV è uno schema AEAD misuse-resistant: anche con nonce ripetuto non rivela il plaintext (rivela solo se due messaggi sono identici). Si usa in contesti dove garantire l\'unicità del nonce è difficile.' },
-      { q: 'AEAD sostituisce completamente TLS?', a: 'No. AEAD risolve la primitive di cifratura autenticata, ma TLS si occupa anche di negoziazione algoritmi, scambio chiavi, autenticazione del server via certificati e molto altro.' }
-    ]
-  }
-];
-
-const CT_STATE = {
-  topicIdx: 0,
-  stepIdx: 0,
-  answered: {},   // { topicId_stepIdx: true/false }
-  completed: {}   // { topicId: stepsCompleted }
-};
-
-function ctTopic() { return CT_TOPICS[CT_STATE.topicIdx]; }
-function ctStep() { return ctTopic().steps[CT_STATE.stepIdx]; }
-
-function renderCoteachSidebar() {
-  document.getElementById('coteachList').innerHTML = CT_TOPICS.map((t, i) => {
-    const done = CT_STATE.completed[t.id] || 0;
-    const total = t.steps.length;
-    const pct = Math.round(done / total * 100);
-    return `<button class="coteach-btn ${i === CT_STATE.topicIdx ? 'active' : ''}" data-ctidx="${i}">
-      <span>${t.label}</span>
-      <span class="badge ${pct === 100 ? 'success' : ''}">${pct}%</span>
-    </button>`;
-  }).join('');
-
-  document.getElementById('ctProgressSummary').innerHTML = CT_TOPICS.map(t => {
-    const done = CT_STATE.completed[t.id] || 0;
-    const total = t.steps.length;
-    return `<div style="font-size:var(--text-xs);display:flex;justify-content:space-between">
-      <span>${t.label}</span><span>${done}/${total} passi</span>
-    </div>`;
-  }).join('');
-}
-
-function renderCoteach() {
-  const topic = ctTopic();
-  const step = ctStep();
-  const stepIdx = CT_STATE.stepIdx;
-  const totalSteps = topic.steps.length;
-  const ansKey = `${topic.id}_${stepIdx}`;
-
-  document.getElementById('ctTopicTitle').textContent = topic.label;
-  document.getElementById('ctTopicTag').textContent = topic.tag;
-  document.getElementById('ctStepLabel').textContent = `Passo ${stepIdx + 1} / ${totalSteps}`;
-  document.getElementById('ctProgressBar').style.width = `${Math.round((stepIdx + 1) / totalSteps * 100)}%`;
-  document.getElementById('ctPrevBtn').disabled = stepIdx === 0;
-  document.getElementById('ctNextBtn').disabled = stepIdx === totalSteps - 1;
-
-  // Lesson content
-  let html = step.html;
-
-  // Question block
-  if (step.question) {
-    const answered = CT_STATE.answered[ansKey];
-    html += `<div class="ct-question">
-      <p style="font-size:var(--text-sm);font-weight:600;margin-bottom:.5rem">✏️ ${step.question.text}</p>`;
-    html += step.question.opts.map((opt, i) => {
-      let cls = 'ct-opt';
-      if (answered !== undefined) {
-        if (i === step.question.correct) cls += ' ct-correct';
-        else if (i === answered && answered !== step.question.correct) cls += ' ct-wrong';
-      }
-      const disabled = answered !== undefined ? 'disabled' : '';
-      return `<button class="${cls}" data-ctopt="${i}" ${disabled}>${opt}</button>`;
-    }).join('');
-    if (answered !== undefined) {
-      html += `<div class="callout" style="margin-top:.5rem;font-size:var(--text-sm)">${step.question.explanation}</div>`;
-    }
-    html += `</div>`;
-  }
-
-  document.getElementById('ctLessonContent').innerHTML = html;
-
-  // FAQ
-  document.getElementById('ctFaqList').innerHTML = topic.faqs.map(f =>
-    `<details class="faq-item"><summary>${f.q}</summary><div class="faq-answer">${f.a}</div></details>`
-  ).join('');
-
-  renderCoteachSidebar();
-}
-
-// Mark progress
-function ctMarkProgress() {
-  const topic = ctTopic();
-  if (!CT_STATE.completed[topic.id]) CT_STATE.completed[topic.id] = 0;
-  CT_STATE.completed[topic.id] = Math.max(CT_STATE.completed[topic.id], CT_STATE.stepIdx + 1);
-}
-
-// Navigation
-document.getElementById('ctNextBtn').addEventListener('click', () => {
-  ctMarkProgress();
-  if (CT_STATE.stepIdx < ctTopic().steps.length - 1) { CT_STATE.stepIdx++; renderCoteach(); }
-});
-document.getElementById('ctPrevBtn').addEventListener('click', () => {
-  if (CT_STATE.stepIdx > 0) { CT_STATE.stepIdx--; renderCoteach(); }
-});
-document.getElementById('ctRestartBtn').addEventListener('click', () => {
-  CT_STATE.stepIdx = 0;
-  CT_STATE.answered = {};
-  renderCoteach();
-});
-
-// Sidebar topic switch
-document.getElementById('coteachList').addEventListener('click', e => {
-  const btn = e.target.closest('[data-ctidx]');
-  if (!btn) return;
-  CT_STATE.topicIdx = +btn.dataset.ctidx;
-  CT_STATE.stepIdx = 0;
-  renderCoteach();
-});
-
-// Answer question
-document.getElementById('ctLessonContent').addEventListener('click', e => {
-  const btn = e.target.closest('[data-ctopt]');
-  if (!btn) return;
-  const topic = ctTopic();
-  const ansKey = `${topic.id}_${CT_STATE.stepIdx}`;
-  if (CT_STATE.answered[ansKey] !== undefined) return;
-  CT_STATE.answered[ansKey] = +btn.dataset.ctopt;
-  ctMarkProgress();
-  renderCoteach();
-});
-
-// Init co-teaching on first open
-renderCoteach();
+<!-- coteach.js MUST come first (defer) so CT_TOPICS is defined before app.js DOMContentLoaded -->
+<script src="coteach.js" defer></script>
+<script src="app.js" defer></script>
+<script src="exercise_engine.js" defer></script>
+<script type="module">
+  import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+  globalThis.webllm = webllm;
 </script>
+<script src="ai_tutor.js" defer></script>
 </body>
 </html>

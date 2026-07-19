@@ -1,6 +1,15 @@
 // Crypto Algorithms Visualizer — app.js
-// 9 algorithm families, 6 attack scenarios, 6 guided examples, 12 quiz questions
+// 9 algorithm families, 6 attack scenarios, 6 guided examples, 12+ quiz questions
 // Student / Teacher / Exercise mode, dark/light theme toggle
+
+function shuffleArray(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 const ALGORITHMS = [
   {
@@ -161,7 +170,7 @@ const EXAMPLES = [
   { id: 'ecc-shared', topic: 'ECC', title: 'ECDH conceptual flow', summary: 'Symbolic points teach the exchange clearly before introducing heavy curve arithmetic.', steps: ['Agree on curve parameters and base point G.', 'Alice publishes A = aG; Bob publishes B = bG.', 'Alice computes aB = a(bG); Bob computes bA = b(aG).', 'Both obtain abG — the shared secret point. ✓'], takeaway: 'ECC preserves the Diffie-Hellman logic with shorter keys for comparable security.', mistake: 'Thinking the public-key points A or B are themselves the shared secret.' }
 ];
 
-const QUIZ = [
+const QUIZ = shuffleArray([
   { category: 'Integrity', q: 'Which property prevents an attacker from modifying ciphertext without detection?', opts: ['Confidentiality','Integrity','Availability','Compression'], correct: 1, ex: 'Integrity mechanisms (MACs, AEAD tags) detect unauthorised modification.' },
   { category: 'Modes', q: 'Why is ECB considered insecure for structured data?', opts: ['It is too slow','It leaks repeated patterns','It requires a nonce','It cannot decrypt'], correct: 1, ex: 'ECB maps equal plaintext blocks to equal ciphertext blocks, preserving visible structure.' },
   { category: 'RSA', q: 'What is the role of φ(n) in textbook RSA key generation?', opts: ['It is the ciphertext space','It is used to compute the private exponent','It replaces the modulus','It stores the message'], correct: 1, ex: 'The private exponent d is chosen so that ed ≡ 1 mod φ(n).' },
@@ -174,7 +183,7 @@ const QUIZ = [
   { category: 'ECC', q: 'Why is ECC attractive compared with classical finite-field DH?', opts: ['It avoids public keys','Comparable security with smaller keys','It is symmetric','It never needs randomness'], correct: 1, ex: 'ECC achieves equivalent security with much shorter keys.' },
   { category: 'Modes', q: 'What does CBC mode fail to provide on its own?', opts: ['Block encryption','Confidentiality','Integrity','Determinism'], correct: 2, ex: 'CBC hides content but does not prevent malleability or detect tampering.' },
   { category: 'Teaching', q: 'Which explanation best distinguishes hashing from encryption for students?', opts: ['Both use keys','Hashing is one-way; encryption is designed to be reversed with the right key','Encryption always shortens data','Hashing guarantees secrecy'], correct: 1, ex: 'Reversibility is the key pedagogical distinction.' }
-];
+]);
 
 const TEACHER = [
   { title: 'DES', summary: 'Present DES as historically important but no longer secure due to its 56-bit effective key.', analogy: 'A classic lock mechanism that is instructive to study, but whose key space is far too small for modern attackers.', warning: 'Students often think every permutation contributes equally to security; emphasise the central role of S-boxes.' },
@@ -417,15 +426,18 @@ const EXAM_SHEET = [
 const STORAGE_KEY = 'cav_state_v2';
 function saveState() {
   try {
+    const coteachState = (typeof CT_STATE !== 'undefined') ? CT_STATE : null;
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       theme: document.documentElement.getAttribute('data-theme'),
       currentAlgo: S.currentAlgo,
       quizAnswers: S.quizAnswers,
       quizIndex: S.quizIndex,
-      quizCategory: S.quizCategory
+      quizCategory: S.quizCategory,
+      coteach: coteachState
     }));
   } catch (err) {}
 }
+
 function loadState() {
   try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
   catch (err) { return null; }
@@ -635,13 +647,15 @@ function renderQuiz() {
   document.getElementById('quizCategory').textContent = q.category;
   document.getElementById('quizQuestionText').textContent = q.q;
   const answered = S.quizAnswers[globalIndex];
-  document.getElementById('quizOptions').innerHTML = q.opts.map((opt, i) => {
+  const shuffledOpts = q._shuffledOpts || q.opts;
+  document.getElementById('quizOptions').innerHTML = shuffledOpts.map((opt, i) => {
     let cls = 'quiz-option';
+    const originalIndex = q._optMap ? q._optMap[i] : i;
     if (answered !== null) {
-      if (i === q.correct) cls += ' correct';
-      else if (i === answered) cls += ' wrong';
+      if (originalIndex === q.correct) cls += ' correct';
+      else if (originalIndex === answered) cls += ' wrong';
     }
-    return `<button class="${cls}" data-qopt="${i}">${opt}</button>`;
+    return `<button class="${cls}" data-qopt="${originalIndex}">${opt}</button>`;
   }).join('');
   const answeredCount = S.quizAnswers.filter(x => x !== null).length;
   const correctCount = S.quizAnswers.filter((ans, idx) => ans !== null && ans === QUIZ[idx].correct).length;
@@ -711,6 +725,12 @@ function initApp() {
     S.quizAnswers = Array.isArray(stored.quizAnswers) && stored.quizAnswers.length === QUIZ.length ? stored.quizAnswers : S.quizAnswers;
     S.quizIndex = stored.quizIndex || 0;
     S.quizCategory = stored.quizCategory || 'All';
+    if (stored.coteach && typeof CT_STATE !== 'undefined') {
+      CT_STATE.topicIdx = stored.coteach.topicIdx || 0;
+      CT_STATE.stepIdx = stored.coteach.stepIdx || 0;
+      CT_STATE.answered = stored.coteach.answered || {};
+      CT_STATE.completed = stored.coteach.completed || {};
+    }
   }
 
   renderLists();
@@ -833,6 +853,12 @@ function initApp() {
   });
 
   document.getElementById('restartQuizBtn').addEventListener('click', () => {
+    QUIZ.forEach(q => {
+      const indices = q.opts.map((_, i) => i);
+      const shuffledIdx = shuffleArray(indices);
+      q._shuffledOpts = shuffledIdx.map(i => q.opts[i]);
+      q._optMap = shuffledIdx;
+    });
     S.quizAnswers = Array(QUIZ.length).fill(null);
     S.quizIndex = 0;
     S.quizSessionStart = Date.now();
